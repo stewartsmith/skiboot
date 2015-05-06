@@ -520,6 +520,17 @@ static void setup_branch_null_catcher(void)
 /* Called from head.S, thus no prototype. */
 void __noreturn main_cpu_entry(const void *fdt, u32 master_cpu);
 
+typedef void (*ctorcall_t)(void);
+
+static void do_ctors(void)
+{
+	extern ctorcall_t __ctors_start[], __ctors_end[];
+	ctorcall_t *call;
+
+	for (call = __ctors_start; call < __ctors_end; call++)
+		(*call)();
+}
+
 void __noreturn main_cpu_entry(const void *fdt, u32 master_cpu)
 {
 	/*
@@ -547,6 +558,8 @@ void __noreturn main_cpu_entry(const void *fdt, u32 master_cpu)
 	 * a NULL function pointer
 	 */
 	setup_branch_null_catcher();
+
+	do_ctors();
 
 	printf("SkiBoot %s starting...\n", version);
 	printf("initial console log level: memory %d, driver %d\n",
