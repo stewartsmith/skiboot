@@ -54,15 +54,15 @@ static u32 nvram_offset, nvram_size;
 static char *version_buf;
 static size_t version_buf_size = 0x2000;
 
-bool flash_reserve(void)
+static bool flash_reserve(struct flash *flash)
 {
 	bool rc = false;
 
 	if (!try_lock(&flash_lock))
 		return false;
 
-	if (!system_flash->busy) {
-		system_flash->busy = true;
+	if (!flash->busy) {
+		flash->busy = true;
 		rc = true;
 	}
 	unlock(&flash_lock);
@@ -70,11 +70,21 @@ bool flash_reserve(void)
 	return rc;
 }
 
-void flash_release(void)
+static void flash_release(struct flash *flash)
 {
 	lock(&flash_lock);
-	system_flash->busy = false;
+	flash->busy = false;
 	unlock(&flash_lock);
+}
+
+bool system_flash_reserve(void)
+{
+	return flash_reserve(system_flash);
+}
+
+void system_flash_release(void)
+{
+	flash_release(system_flash);
 }
 
 static int flash_nvram_info(uint32_t *total_size)
