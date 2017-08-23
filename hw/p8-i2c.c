@@ -1063,8 +1063,11 @@ static int occ_i2c_lock(struct p8_i2c_master *master)
 
 	busflag = PPC_BIT(16 + (master->engine_id - 1) * 2);
 
-	DBG("occflags = %llx (locks = %.6llx)\n", (u64)occflags,
-	    GETFIELD(PPC_BITMASK(16, 22), occflags));
+	DBG("I2C: c%de%d: occflags = %llx (locks = %x:%x:%x)\n",
+		master->chip_id, master->engine_id, (u64) occflags,
+		(u32) GETFIELD(PPC_BITMASK(16, 17), occflags),
+		(u32) GETFIELD(PPC_BITMASK(18, 19), occflags),
+		(u32) GETFIELD(PPC_BITMASK(20, 21), occflags));
 
 	rc = xscom_write(master->chip_id, OCCFLG_SET, busflag);
 	if (rc) {
@@ -1073,8 +1076,11 @@ static int occ_i2c_lock(struct p8_i2c_master *master)
 	}
 
 	/* If the OCC also has this bus locked then wait for IRQ */
-	if (occflags & (busflag << 1))
+	if (occflags & (busflag >> 1)) {
+		prlog(PR_DEBUG, "I2C: c%de%d: Master in use by OCC\n",
+			master->chip_id, master->engine_id);
 		return 1;
+	}
 
 	master->occ_lock_acquired = true;
 
@@ -1161,7 +1167,7 @@ static int p8_i2c_start_request(struct p8_i2c_master *master,
 	if (rc > 0) {
 		/* Wait for OCC IRQ */
 		master->state = state_occache_dis;
-		schedule_timer(&master->recovery, rc);
+		schedule_timer(&master->recovery, msecs_to_tb(10));
 		return 0;
 	}
 
@@ -1298,11 +1304,13 @@ void p9_i2c_bus_owner_change(u32 chip_id)
 			continue;
 		}
 
-		/* Run the state machine */
-		p8_i2c_check_status(master);
+		/* clear the existing wait timer */
+		cancel_timer(&master->recovery);
 
-		/* Check for new work */
+		/* start the request now that we own the master */
+		master->state = state_idle;
 		p8_i2c_check_work(master);
+		p8_i2c_check_status(master);
 
 		unlock(&master->lock);
 	}
