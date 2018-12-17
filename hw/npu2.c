@@ -285,10 +285,10 @@ static int64_t npu2_cfg_write_bar(struct npu2_dev *dev,
 	}
 
 	if (offset == pcrf->start) {
-		npu2_bar->base &= 0xffffffff00000000;
+		npu2_bar->base &= 0xffffffff00000000UL;
 		npu2_bar->base |= (data & 0xfffffff0);
 	} else {
-		npu2_bar->base &= 0x00000000ffffffff;
+		npu2_bar->base &= 0x00000000ffffffffUL;
 		npu2_bar->base |= ((uint64_t)data << 32);
 
 		PCI_VIRT_CFG_NORMAL_RD(pvd, PCI_CFG_CMD, 4, &pci_cmd);

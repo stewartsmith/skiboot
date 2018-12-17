@@ -51,7 +51,7 @@
  */
 #define STACK_WARNING_GAP	2048
 
-#define STACK_CHECK_GUARD_BASE	0xdeadf00dbaad300
+#define STACK_CHECK_GUARD_BASE	0xdeadf00dbaad300UL
 
 #ifndef __ASSEMBLY__
 
