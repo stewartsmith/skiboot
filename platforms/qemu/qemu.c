@@ -40,6 +40,15 @@ static bool qemu_probe(void)
 	return true;
 }
 
+static int qemu_heartbeat_time(void)
+{
+	/*
+	 * Fast polling to make up for lack of SBE timers
+	 */
+	return 1;
+}
+
+
 static void qemu_init(void)
 {
 	if (!bt_device_present) {
@@ -58,5 +67,6 @@ DECLARE_PLATFORM(qemu) = {
 	.cec_reboot     = astbmc_ipmi_reboot,
 	.start_preload_resource	= flash_start_preload_resource,
 	.resource_loaded	= flash_resource_loaded,
+	.heartbeat_time		= qemu_heartbeat_time,
 	.terminate	= ipmi_terminate,
 };
