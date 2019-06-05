@@ -41,6 +41,21 @@ static void dump_regs(struct stack_frame *stack)
 
 #define EXCEPTION_MAX_STR 320
 
+static void print_recoverable_mce_vm(struct stack_frame *stack, uint64_t nip, uint64_t msr)
+{
+	char buf[EXCEPTION_MAX_STR];
+	size_t l;
+
+	l = 0;
+	l += snprintf(buf + l, EXCEPTION_MAX_STR - l,
+		"Recoverable MCE with VM on at "REG"   ", nip);
+	l += snprintf_symbol(buf + l, EXCEPTION_MAX_STR - l, nip);
+	l += snprintf(buf + l, EXCEPTION_MAX_STR - l, "  MSR "REG, msr);
+	prerror("%s\n", buf);
+	dump_regs(stack);
+	prerror("Continuing with VM off\n");
+}
+
 void exception_entry(struct stack_frame *stack)
 {
 	bool fatal = false;
@@ -92,6 +107,17 @@ void exception_entry(struct stack_frame *stack)
 		break;
 
 	case 0x200:
+		if (this_cpu()->vm_local_map_inuse)
+			fatal = true; /* local map is non-linear */
+
+		if (!fatal && (msr & (MSR_IR|MSR_DR))) {
+			print_recoverable_mce_vm(stack, nip, msr);
+			/* Turn off VM and try again */
+			this_cpu()->vm_setup = false;
+			stack->srr1 &= ~(MSR_IR|MSR_DR);
+			goto out;
+		}
+
 		fatal = true;
 		prerror("***********************************************\n");
 		l += snprintf(buf + l, EXCEPTION_MAX_STR - l,
