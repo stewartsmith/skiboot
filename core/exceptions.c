@@ -98,6 +98,41 @@ void exception_entry(struct stack_frame *stack)
 			"Fatal MCE at "REG"   ", nip);
 		break;
 
+	case 0x300:
+		if (vm_dsi(nip, stack->dar, !!(stack->dsisr & DSISR_ISSTORE)))
+			goto out;
+		fatal = true;
+		l += snprintf(buf + l, EXCEPTION_MAX_STR - l,
+			"Fatal %s address "REG" at "REG"   ",
+			(stack->dsisr & DSISR_ISSTORE) ? "store" : "load",
+			stack->dar, nip);
+		break;
+
+	case 0x380:
+		if (vm_dslb(nip, stack->dar))
+			goto out;
+		fatal = true;
+		l += snprintf(buf + l, EXCEPTION_MAX_STR - l,
+			"Fatal load/store address "REG" at "REG"   ",
+			stack->dar, nip);
+		break;
+
+	case 0x400:
+		if (vm_isi(nip))
+			goto out;
+		fatal = true;
+		l += snprintf(buf + l, EXCEPTION_MAX_STR - l,
+			"Fatal ifetch at "REG"   ", nip);
+		break;
+
+	case 0x480:
+		if (vm_islb(nip))
+			goto out;
+		fatal = true;
+		l += snprintf(buf + l, EXCEPTION_MAX_STR - l,
+			"Fatal ifetch at "REG"   ", nip);
+		break;
+
 	default:
 		fatal = true;
 		prerror("***********************************************\n");
@@ -110,10 +145,11 @@ void exception_entry(struct stack_frame *stack)
 	prerror("%s\n", buf);
 	dump_regs(stack);
 
+	if (!fatal)
+		backtrace();
+out:
 	if (fatal)
 		abort();
-	else
-		backtrace();
 
 	if (hv) {
 		/* Set up for SRR return */

@@ -91,6 +91,7 @@ static bool try_load_elf64_le(struct elf_hdr *header)
 	uint64_t load_base = (uint64_t)kh;
 	struct elf64_phdr *ph;
 	unsigned int i;
+	bool ret = false;
 
 	printf("INIT: 64-bit LE kernel discovered\n");
 
@@ -102,6 +103,9 @@ static bool try_load_elf64_le(struct elf_hdr *header)
 	 * but it will not work for any ELF binary.
 	 */
 	ph = (struct elf64_phdr *)(load_base + le64_to_cpu(kh->e_phoff));
+	vm_map_global("KERNEL ELF Program Headers", (unsigned long)ph,
+			le16_to_cpu(kh->e_phnum)*sizeof(struct elf64_phdr),
+			false, false);
 	for (i = 0; i < le16_to_cpu(kh->e_phnum); i++, ph++) {
 		if (le32_to_cpu(ph->p_type) != ELF_PTYPE_LOAD)
 			continue;
@@ -118,7 +122,7 @@ static bool try_load_elf64_le(struct elf_hdr *header)
 
 	if (!kernel_entry) {
 		prerror("INIT: Failed to find kernel entry !\n");
-		return false;
+		goto out_unmap;
 	}
 	kernel_entry += load_base;
 	kernel_32bit = false;
@@ -130,7 +134,12 @@ static bool try_load_elf64_le(struct elf_hdr *header)
 	prlog(PR_DEBUG, "INIT: 64-bit kernel entry at 0x%llx, size 0x%lx\n",
 	      kernel_entry, kernel_size);
 
-	return true;
+	ret = true;
+
+out_unmap:
+	vm_unmap_global((unsigned long)ph, le16_to_cpu(kh->e_phnum)*sizeof(struct elf64_phdr));
+
+	return ret;
 }
 
 static bool try_load_elf64(struct elf_hdr *header)
@@ -140,12 +149,17 @@ static bool try_load_elf64(struct elf_hdr *header)
 	struct elf64_phdr *ph;
 	struct elf64_shdr *sh;
 	unsigned int i;
+	bool ret = false;
+
+	vm_map_global("KERNEL ELF64 Header", (unsigned long)header,
+			sizeof(struct elf64_hdr), false, false);
 
 	/* Check it's a ppc64 LE ELF */
 	if (kh->ei_ident == ELF_IDENT		&&
 	    kh->ei_data == ELF_DATA_LSB		&&
 	    kh->e_machine == le16_to_cpu(ELF_MACH_PPC64)) {
-		return try_load_elf64_le(header);
+		ret = try_load_elf64_le(header);
+		goto out_unmap1;
 	}
 
 	/* Check it's a ppc64 ELF */
@@ -153,7 +167,7 @@ static bool try_load_elf64(struct elf_hdr *header)
 	    kh->ei_data != ELF_DATA_MSB		||
 	    kh->e_machine != ELF_MACH_PPC64) {
 		prerror("INIT: Kernel doesn't look like an ppc64 ELF\n");
-		return false;
+		goto out_unmap1;
 	}
 
 	/* Look for a loadable program header that has our entry in it
@@ -164,6 +178,8 @@ static bool try_load_elf64(struct elf_hdr *header)
 	 * but it will not work for any ELF binary.
 	 */
 	ph = (struct elf64_phdr *)(load_base + kh->e_phoff);
+	vm_map_global("KERNEL ELF Program Headers", (unsigned long)ph,
+			kh->e_phnum*sizeof(struct elf64_phdr), false, false);
 	for (i = 0; i < kh->e_phnum; i++, ph++) {
 		if (ph->p_type != ELF_PTYPE_LOAD)
 			continue;
@@ -178,7 +194,7 @@ static bool try_load_elf64(struct elf_hdr *header)
 
 	if (!kernel_entry) {
 		prerror("INIT: Failed to find kernel entry !\n");
-		return false;
+		goto out_unmap2;
 	}
 
 	/* For the normal big-endian ELF ABI, the kernel entry points
@@ -188,6 +204,8 @@ static bool try_load_elf64(struct elf_hdr *header)
 	 * to assuming it obeys the ABI.
 	 */
 	sh = (struct elf64_shdr *)(load_base + kh->e_shoff);
+	vm_map_global("KERNEL ELF Section Headers", (unsigned long)sh,
+			kh->e_shnum*sizeof(struct elf64_shdr), false, false);
 	for (i = 0; i < kh->e_shnum; i++, sh++) {
 		if (sh->sh_addr <= kh->e_entry &&
 		      (sh->sh_addr + sh->sh_size) > kh->e_entry)
@@ -208,7 +226,15 @@ static bool try_load_elf64(struct elf_hdr *header)
 	printf("INIT: 64-bit kernel entry at 0x%llx, size 0x%lx\n",
 	       kernel_entry, kernel_size);
 
-	return true;
+	ret = true;
+
+	vm_unmap_global((unsigned long)sh, kh->e_shnum*sizeof(struct elf64_shdr));
+out_unmap2:
+	vm_unmap_global((unsigned long)ph, kh->e_phnum*sizeof(struct elf64_phdr));
+out_unmap1:
+	vm_unmap_global((unsigned long)header, sizeof(struct elf64_hdr));
+
+	return ret;
 }
 
 static bool try_load_elf32_le(struct elf_hdr *header)
@@ -321,6 +347,7 @@ bool start_preload_kernel(void)
 	int loaded;
 
 	/* Try to load an external kernel payload through the platform hooks */
+	vm_map_global("KERNEL", (unsigned long)KERNEL_LOAD_BASE, KERNEL_LOAD_SIZE, true, false);
 	kernel_size = KERNEL_LOAD_SIZE;
 	loaded = start_preload_resource(RESOURCE_ID_KERNEL,
 					RESOURCE_SUBID_NONE,
@@ -329,9 +356,11 @@ bool start_preload_kernel(void)
 	if (loaded != OPAL_SUCCESS) {
 		printf("INIT: platform start load kernel failed\n");
 		kernel_size = 0;
+		vm_unmap_global((unsigned long)KERNEL_LOAD_BASE, KERNEL_LOAD_SIZE);
 		return false;
 	}
 
+	vm_map_global("INITRAMFS", (unsigned long)INITRAMFS_LOAD_BASE, INITRAMFS_LOAD_SIZE, true, false);
 	initramfs_size = INITRAMFS_LOAD_SIZE;
 	loaded = start_preload_resource(RESOURCE_ID_INITRAMFS,
 					RESOURCE_SUBID_NONE,
@@ -339,6 +368,7 @@ bool start_preload_kernel(void)
 	if (loaded != OPAL_SUCCESS) {
 		printf("INIT: platform start load initramfs failed\n");
 		initramfs_size = 0;
+		vm_unmap_global((unsigned long)INITRAMFS_LOAD_BASE, INITRAMFS_LOAD_SIZE);
 		return false;
 	}
 
@@ -348,13 +378,16 @@ bool start_preload_kernel(void)
 static bool load_kernel(void)
 {
 	void *stb_container = NULL;
-	struct elf_hdr *kh;
+	struct elf_hdr *kh, *t;
+	uint32_t ei_ident;
+	uint8_t ei_class;
 	int loaded;
 
 	prlog(PR_NOTICE, "INIT: Waiting for kernel...\n");
 
 	loaded = wait_for_resource_loaded(RESOURCE_ID_KERNEL,
 					  RESOURCE_SUBID_NONE);
+	vm_unmap_global((unsigned long)KERNEL_LOAD_BASE, KERNEL_LOAD_SIZE);
 
 	if (loaded != OPAL_SUCCESS) {
 		printf("INIT: platform wait for kernel load failed\n");
@@ -370,8 +403,10 @@ static bool load_kernel(void)
 				((uint64_t)__builtin_kernel_start) -
 				SKIBOOT_BASE + boot_offset;
 			printf("Using built-in kernel\n");
+			vm_map_global("KERNEL", (unsigned long)KERNEL_LOAD_BASE, kernel_size, true, false);
 			memmove(KERNEL_LOAD_BASE, (void*)builtin_base,
 				kernel_size);
+			vm_unmap_global((unsigned long)KERNEL_LOAD_BASE, kernel_size);
 		}
 	}
 
@@ -387,7 +422,7 @@ static bool load_kernel(void)
 		if (kernel_entry < EXCEPTION_VECTORS_END) {
 			cpu_set_sreset_enable(false);
 			memcpy_null(NULL, old_vectors, EXCEPTION_VECTORS_END);
-			sync_icache();
+			sync_icache(0);
 		} else {
 			/* Hack for STB in Mambo, assume at least 4kb in mem */
 			if (!kernel_size)
@@ -418,15 +453,20 @@ static bool load_kernel(void)
 	      "INIT: Kernel loaded, size: %zu bytes (0 = unknown preload)\n",
 	      kernel_size);
 
-	if (kh->ei_ident != ELF_IDENT) {
+	t = vm_map((unsigned long)kh, sizeof(*kh), false);
+	ei_ident = t->ei_ident;
+	ei_class = t->ei_class;
+	vm_unmap((unsigned long)t, sizeof(*kh));
+
+	if (ei_ident != ELF_IDENT) {
 		prerror("INIT: ELF header not found. Assuming raw binary.\n");
 		return true;
 	}
 
-	if (kh->ei_class == ELF_CLASS_64) {
+	if (ei_class == ELF_CLASS_64) {
 		if (!try_load_elf64(kh))
 			return false;
-	} else if (kh->ei_class == ELF_CLASS_32) {
+	} else if (ei_class == ELF_CLASS_32) {
 		if (!try_load_elf32(kh))
 			return false;
 	} else {
@@ -454,7 +494,7 @@ static void load_initramfs(void)
 
 	loaded = wait_for_resource_loaded(RESOURCE_ID_INITRAMFS,
 					  RESOURCE_SUBID_NONE);
-
+	vm_unmap_global((unsigned long)INITRAMFS_LOAD_BASE, INITRAMFS_LOAD_SIZE);
 	if (loaded != OPAL_SUCCESS || !initramfs_size)
 		return;
 
@@ -526,6 +566,7 @@ void __noreturn load_and_boot_kernel(bool is_reboot)
 	const struct dt_property *memprop;
 	const char *cmdline, *stdoutp;
 	uint64_t mem_top;
+	uint32_t *t;
 
 	memprop = dt_find_property(dt_root, DT_PRIVATE "maxmem");
 	if (memprop)
@@ -619,11 +660,13 @@ void __noreturn load_and_boot_kernel(bool is_reboot)
 
 	fdt_set_boot_cpuid_phys(fdt, this_cpu()->pir);
 
+	t = vm_map(kernel_entry, 4, false);
 	/* Check there is something there before we branch to it */
-	if (*(uint32_t *)kernel_entry == 0) {
+	if (*t == 0) {
 		prlog(PR_EMERG, "FATAL: Kernel is zeros, can't execute!\n");
 		assert(0);
 	}
+	vm_unmap(kernel_entry, 4);
 
 	/* Take processors out of nap */
 	cpu_set_sreset_enable(false);
@@ -631,6 +674,9 @@ void __noreturn load_and_boot_kernel(bool is_reboot)
 
 	printf("INIT: Starting kernel at 0x%llx, fdt at %p %u bytes\n",
 	       kernel_entry, fdt, fdt_totalsize(fdt));
+
+	/* Go back to realmode and tear down our VM before booting kernel */
+	vm_destroy();
 
 	/* Disable machine checks on all */
 	cpu_disable_ME_RI_all();
@@ -798,34 +844,55 @@ static void setup_branch_null_catcher(void)
 
 void copy_sreset_vector(void)
 {
+	static char patch[0x100];
 	uint32_t *src, *dst;
+	uint32_t *t;
+	uint32_t len = (void *)&reset_patch_end - (void *)&reset_patch_start;
 
 	/* Copy the reset code over the entry point. */
 	src = &reset_patch_start;
+	t = vm_map((unsigned long)src, len, false);
+	memcpy(patch, t, len);
+	vm_unmap((unsigned long)src, len);
+
 	dst = (uint32_t *)0x100;
-	while(src < &reset_patch_end)
-		*(dst++) = *(src++);
-	sync_icache();
+	t = vm_map((unsigned long)dst, len, true);
+	memcpy(t, patch, len);
+	sync_icache((unsigned long)t);
+	vm_unmap((unsigned long)dst, len);
 }
 
 void copy_sreset_vector_fast_reboot(void)
 {
+	static char patch[0x100];
 	uint32_t *src, *dst;
+	uint32_t *t;
+	uint32_t len = (void *)&reset_fast_reboot_patch_end -
+			(void *)&reset_fast_reboot_patch_start;
 
 	/* Copy the reset code over the entry point. */
 	src = &reset_fast_reboot_patch_start;
+	t = vm_map((unsigned long)src, len, false);
+	memcpy(patch, t, len);
+	vm_unmap((unsigned long)src, len);
+
 	dst = (uint32_t *)0x100;
-	while(src < &reset_fast_reboot_patch_end)
-		*(dst++) = *(src++);
-	sync_icache();
+	t = vm_map((unsigned long)dst, len, true);
+	memcpy(t, patch, len);
+	sync_icache((unsigned long)t);
+	vm_unmap((unsigned long)dst, len);
 }
 
 void copy_exception_vectors(void)
 {
+	void *t;
+
+	t = vm_map(0x0, 0x2000, true);
+
 	/* Backup previous vectors as this could contain a kernel
 	 * image.
 	 */
-	memcpy_null(old_vectors, NULL, EXCEPTION_VECTORS_END);
+	memcpy(old_vectors, t, EXCEPTION_VECTORS_END);
 
 	/* Copy from 0x100 to EXCEPTION_VECTORS_END, avoid below 0x100 as
 	 * this is the boot flag used by CPUs still potentially entering
@@ -833,9 +900,10 @@ void copy_exception_vectors(void)
 	 */
 	BUILD_ASSERT((&reset_patch_end - &reset_patch_start) <
 			EXCEPTION_VECTORS_END - 0x100);
-	memcpy((void *)0x100, (void *)(SKIBOOT_BASE + 0x100),
+	memcpy(t + 0x100, (void *)(SKIBOOT_BASE + 0x100),
 			EXCEPTION_VECTORS_END - 0x100);
-	sync_icache();
+	sync_icache((unsigned long)t);
+	vm_unmap(0x0, 0x2000);
 }
 
 static void per_thread_sanity_checks(void)
@@ -899,16 +967,25 @@ static uint32_t romem_csum;
 
 static void checksum_romem(void)
 {
+	void *t;
+	unsigned long size;
 	uint32_t csum;
 
 	romem_csum = 0;
 	if (chip_quirk(QUIRK_SLOW_SIM))
 		return;
 
-	csum = mem_csum(_start, _romem_end);
+	size = (unsigned long)_romem_end - (unsigned long)_start;
+	t = vm_map((unsigned long)_start, size, false);
+	csum = mem_csum(t, t + size);
 	romem_csum ^= csum;
-	csum = mem_csum(__builtin_kernel_start, __builtin_kernel_end);
+	vm_unmap((unsigned long)_start, size);
+
+	size = (unsigned long)__builtin_kernel_end - (unsigned long)__builtin_kernel_start;
+	t = vm_map((unsigned long)__builtin_kernel_start, size, false);
+	csum = mem_csum(t, t + size);
 	romem_csum ^= csum;
+	vm_unmap((unsigned long)__builtin_kernel_start, size);
 }
 
 bool verify_romem(void)
@@ -984,7 +1061,7 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 	prlog(PR_DEBUG, "initial console log level: memory %d, driver %d\n",
 	       (debug_descriptor.console_log_levels >> 4),
 	       (debug_descriptor.console_log_levels & 0x0f));
-	prlog(PR_TRACE, "OPAL is Powered By Linked-List Technology.\n");
+	prlog(PR_TRACE, "OPAL is Powered By Linked-List Technology. Now with more indirection.\n");
 
 #ifdef SKIBOOT_GCOV
 	skiboot_gcov_done();
@@ -995,6 +1072,9 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 
 	/* Now locks can be used */
 	init_locks();
+
+	/* Enter virtual memory mode */
+	vm_init();
 
 	/* Create the OPAL call table early on, entries can be overridden
 	 * later on (FSP console code for example)
@@ -1021,7 +1101,20 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 		if (parse_hdat(false) < 0)
 			abort();
 	} else {
+		void *t;
+		uint32_t size;
+
+		t = vm_map((unsigned long)fdt, sizeof(struct fdt_header), false);
+		size = fdt_totalsize(t);
+		vm_unmap((unsigned long)fdt, sizeof(struct fdt_header));
+
+		/*
+		 * Would be nice to make this a local map, but it seems
+		 * to need to be expanded in place.
+		 */
+		vm_map_global("fdt", (unsigned long)fdt, size, false, false);
 		dt_expand(fdt);
+		vm_unmap_global((unsigned long)fdt, size);
 	}
 	dt_add_cpufeatures(dt_root);
 
@@ -1071,6 +1164,8 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 	 * region length can be set according to the maximum PIR.
 	 */
 	init_cpu_max_pir();
+
+	vm_init_stacks();
 
 	/*
 	 * Now, we init our memory map from the device-tree, and immediately
@@ -1299,6 +1394,30 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 }
 
 void __noreturn __secondary_cpu_entry(void)
+{
+	struct cpu_thread *cpu = this_cpu();
+
+	/* Secondary CPU called in */
+	cpu_callin(cpu);
+
+	enable_machine_check();
+	mtmsrd(MSR_RI, 1);
+
+	vm_init_secondary();
+
+	/* Some XIVE setup */
+	xive_cpu_callin(cpu);
+
+	/* Wait for work to do */
+	while(true) {
+		if (cpu_check_jobs(cpu))
+			cpu_process_jobs();
+		else
+			cpu_idle_job();
+	}
+}
+
+void __noreturn __return_cpu_entry(void)
 {
 	struct cpu_thread *cpu = this_cpu();
 

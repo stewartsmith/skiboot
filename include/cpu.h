@@ -25,6 +25,19 @@
 #include <stack.h>
 #include <timer.h>
 
+struct vm_map {
+	struct list_node list;
+
+	const char *name;
+	uint64_t address;
+	uint64_t pa;
+	uint64_t length;
+	bool readable;
+	bool writeable;
+	bool executable;
+	bool ci;
+};
+
 /*
  * cpu_thread is our internal structure representing each
  * thread in the system
@@ -83,10 +96,19 @@ struct cpu_thread {
 	struct bt_entry			stack_bot_bt[CPU_BACKTRACE_SIZE];
 	struct bt_metadata		stack_bot_bt_metadata;
 #endif
+	/*
+	 * Per-thread VM parameters
+	 */
+	struct vm_map			vm_local_map; /* per-cpu map */
+	bool				vm_local_map_inuse;
+	uint8_t				vm_slb_rr; /* RR allocator */
+	bool				vm_setup; /* virtual memory is up */
+
 	struct lock			job_lock;
 	struct list_head		job_queue;
 	uint32_t			job_count;
 	bool				job_has_no_return;
+
 	/*
 	 * Per-core mask tracking for threads in HMI handler and
 	 * a cleanup done bit.

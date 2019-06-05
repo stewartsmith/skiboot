@@ -36,12 +36,16 @@ int fake_nvram_info(uint32_t *total_size)
 
 int fake_nvram_start_read(void *dst, uint32_t src, uint32_t len)
 {
+	void *t;
+
 	if (!nvram_region)
 		return -ENODEV;
 
+	t = vm_map(nvram_region->start + src, len, false);
 	lock(&fake_nvram_lock);
-	memcpy(dst, (void *) (nvram_region->start + src), len);
+	memcpy(dst, t, len);
 	unlock(&fake_nvram_lock);
+	vm_unmap(nvram_region->start + src, len);
 
 	nvram_read_complete(true);
 
@@ -50,12 +54,16 @@ int fake_nvram_start_read(void *dst, uint32_t src, uint32_t len)
 
 int fake_nvram_write(uint32_t offset, void *src, uint32_t size)
 {
+	void *t;
+
 	if (!nvram_region)
 		return OPAL_HARDWARE;
 
+	t = vm_map(nvram_region->start + offset, size, true);
 	lock(&fake_nvram_lock);
-	memcpy((void *) (nvram_region->start + offset), src, size);
+	memcpy(t, src, size);
 	unlock(&fake_nvram_lock);
+	vm_unmap(nvram_region->start + offset, size);
 
 	return 0;
 }

@@ -869,6 +869,8 @@ void xscom_init(void)
 		assert(reg);
 
 		chip->xscom_base = dt_translate_address(xn, 0, NULL);
+		/* XXX: how large is this window? */
+		vm_map_global("XSCOM MMIO", chip->xscom_base, 0x200000000UL, true, true);
 
 		/* Grab processor type and EC level */
 		xscom_init_chip_info(chip);
@@ -882,7 +884,7 @@ void xscom_init(void)
 		prlog(PR_NOTICE, "CHIP: Chip ID %04x type: %s DD%x.%x%d\n",
 		      gcid, chip_name, chip->ec_level >> 4,
 		      chip->ec_level & 0xf, chip->ec_rev);
-		prlog(PR_DEBUG, "XSCOM: Base address: 0x%llx\n", chip->xscom_base);
+		prlog(PR_NOTICE, "XSCOM: Base address: 0x%llx\n", chip->xscom_base);
 	}
 
 	/* Collect details to trigger xstop via XSCOM write */

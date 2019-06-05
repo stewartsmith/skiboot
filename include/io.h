@@ -20,6 +20,7 @@
 #ifndef __ASSEMBLY__
 
 #include <compiler.h>
+#include <skiboot.h>
 #include <stdint.h>
 #include <processor.h>
 #include <ccan/endian/endian.h>
@@ -35,8 +36,14 @@
 static inline uint8_t __in_8(const volatile uint8_t *addr)
 {
 	uint8_t val;
-	asm volatile("lbzcix %0,0,%1" :
+
+	if (vm_realmode())
+		asm volatile("lbzcix %0,0,%1" :
 		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("lbzx %0,0,%1" :
+		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+
 	return val;
 }
 
@@ -49,8 +56,14 @@ static inline uint8_t in_8(const volatile uint8_t *addr)
 static inline uint16_t __in_be16(const volatile uint16_t *addr)
 {
 	uint16_t val;
-	asm volatile("lhzcix %0,0,%1" :
+
+	if (vm_realmode())
+		asm volatile("lhzcix %0,0,%1" :
 		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("lhzx %0,0,%1" :
+		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+
 	return val;
 }
 
@@ -68,8 +81,14 @@ static inline uint16_t in_le16(const volatile uint16_t *addr)
 static inline uint32_t __in_be32(const volatile uint32_t *addr)
 {
 	uint32_t val;
-	asm volatile("lwzcix %0,0,%1" :
+
+	if (vm_realmode())
+		asm volatile("lwzcix %0,0,%1" :
 		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("lwzx %0,0,%1" :
+		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+
 	return val;
 }
 
@@ -87,8 +106,14 @@ static inline uint32_t in_le32(const volatile uint32_t *addr)
 static inline uint64_t __in_be64(const volatile uint64_t *addr)
 {
 	uint64_t val;
-	asm volatile("ldcix %0,0,%1" :
+
+	if (vm_realmode())
+		asm volatile("ldcix %0,0,%1" :
 		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("ldx %0,0,%1" :
+		     "=r"(val) : "r"(addr), "m"(*addr) : "memory");
+
 	return val;
 }
 
@@ -105,7 +130,11 @@ static inline uint64_t in_le64(const volatile uint64_t *addr)
 
 static inline void __out_8(volatile uint8_t *addr, uint8_t val)
 {
-	asm volatile("stbcix %0,0,%1"
+	if (vm_realmode())
+		asm volatile("stbcix %0,0,%1"
+		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("stbx %0,0,%1"
 		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
 }
 
@@ -117,7 +146,11 @@ static inline void out_8(volatile uint8_t *addr, uint8_t val)
 
 static inline void __out_be16(volatile uint16_t *addr, uint16_t val)
 {
-	asm volatile("sthcix %0,0,%1"
+	if (vm_realmode())
+		asm volatile("sthcix %0,0,%1"
+		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("sthx %0,0,%1"
 		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
 }
 
@@ -134,7 +167,11 @@ static inline void out_le16(volatile uint16_t *addr, uint16_t val)
 
 static inline void __out_be32(volatile uint32_t *addr, uint32_t val)
 {
-	asm volatile("stwcix %0,0,%1"
+	if (vm_realmode())
+		asm volatile("stwcix %0,0,%1"
+		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("stwx %0,0,%1"
 		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
 }
 
@@ -151,7 +188,11 @@ static inline void out_le32(volatile uint32_t *addr, uint32_t val)
 
 static inline void __out_be64(volatile uint64_t *addr, uint64_t val)
 {
-	asm volatile("stdcix %0,0,%1"
+	if (vm_realmode())
+		asm volatile("stdcix %0,0,%1"
+		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
+	else
+		asm volatile("stdx %0,0,%1"
 		     : : "r"(val), "r"(addr), "m"(*addr) : "memory");
 }
 

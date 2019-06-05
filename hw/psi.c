@@ -964,6 +964,8 @@ static bool psi_init_psihb(struct dt_node *psihb)
 
 	list_add(&psis, &psi->list);
 
+	vm_map_global("PSI", (unsigned long)psi->regs, 0x100, true, true);
+
 	val = in_be64(psi->regs + PSIHB_CR);
 	if (val & PSIHB_CR_FSP_LINK_ACTIVE) {
 		lock(&psi_lock);

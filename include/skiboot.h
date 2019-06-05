@@ -56,8 +56,13 @@ extern char __sym_map_end[];
 extern char _romem_end[];
 
 #ifndef __TESTING__
+extern char _stext[], _etext[];
 /* Readonly section start and end. */
 extern char __rodata_start[], __rodata_end[];
+extern char _sdata[], _edata[];
+extern char __sym_map_start[], __sym_map_end[];
+extern char _sbss[], _ebss[];
+extern char _end[];
 
 static inline bool is_rodata(const void *p)
 {
@@ -191,6 +196,7 @@ extern void disable_fast_reboot(const char *reason);
 extern void add_fast_reboot_dt_entries(void);
 extern void fast_reboot(void);
 extern void __noreturn __secondary_cpu_entry(void);
+extern void __noreturn __return_cpu_entry(void);
 extern void __noreturn load_and_boot_kernel(bool is_reboot);
 extern void cleanup_local_tlb(void);
 extern void cleanup_global_tlb(void);
@@ -340,5 +346,26 @@ extern uint32_t reset_fast_reboot_patch_end;
 extern int fake_nvram_info(uint32_t *total_size);
 extern int fake_nvram_start_read(void *dst, uint32_t src, uint32_t len);
 extern int fake_nvram_write(uint32_t offset, void *src, uint32_t size);
+
+/* core/vm.c */
+#define PAGE_SIZE 4096
+
+bool vm_realmode(void);
+void vm_map_global(const char *name, unsigned long addr, unsigned long len, bool rw, bool ci);
+void vm_unmap_global(unsigned long addr, unsigned long len);
+void *vm_map(unsigned long addr, unsigned long len, bool rw);
+void vm_unmap(unsigned long addr, unsigned long len);
+void vm_init(void);
+void vm_init_stacks(void);
+void vm_destroy(void);
+void vm_init_secondary(void);
+void vm_enter(void);
+void vm_exit(void);
+void vm_exit_cleanup(void);
+void vm_map_stacks(void);
+bool vm_dslb(uint64_t nia, uint64_t dar);
+bool vm_islb(uint64_t nia);
+bool vm_dsi(uint64_t nia, uint64_t dar, bool store);
+bool vm_isi(uint64_t nia);
 
 #endif /* __SKIBOOT_H */

@@ -355,6 +355,9 @@ void __noreturn fast_reboot_entry(void)
 	 * up and go processing jobs.
 	 */
 	if (this_cpu() != boot_cpu) {
+		cleanup_cpu_state();
+
+		sync();
 		if (!fast_boot_release) {
 			smt_lowest();
 			while (!fast_boot_release)
@@ -362,9 +365,6 @@ void __noreturn fast_reboot_entry(void)
 			smt_medium();
 		}
 		sync();
-		cleanup_cpu_state();
-		enable_machine_check();
-		mtmsrd(MSR_RI, 1);
 
 		__secondary_cpu_entry();
 	}
@@ -379,14 +379,21 @@ void __noreturn fast_reboot_entry(void)
 	if (proc_gen == proc_gen_p9)
 		xive_reset();
 
+	/* Cleanup ourselves */
+	cleanup_cpu_state();
+
+	/* XXX: need this? */
+	enable_machine_check();
+	mtmsrd(MSR_RI, 1);
+
+	/* Enter virtual memory mode */
+	vm_init();
+
 	prlog(PR_INFO, "RESET: Releasing secondaries...\n");
 
 	/* Release everybody */
 	sync();
 	fast_boot_release = true;
-
-	/* Cleanup ourselves */
-	cleanup_cpu_state();
 
 	/* Set our state to active */
 	sync();
@@ -414,6 +421,7 @@ void __noreturn fast_reboot_entry(void)
 	cpu_set_ipi_enable(true);
 
 	if (!chip_quirk(QUIRK_MAMBO_CALLOUTS)) {
+		void *t;
 		/*
 		 * mem_region_clear_unused avoids these preload regions
 		 * so it can run along side image preloading. Clear these
@@ -423,8 +431,14 @@ void __noreturn fast_reboot_entry(void)
 		 * Mambo may have embedded payload here, so don't clear
 		 * it at all.
 		 */
-		memset(KERNEL_LOAD_BASE, 0, KERNEL_LOAD_SIZE);
-		memset(INITRAMFS_LOAD_BASE, 0, INITRAMFS_LOAD_SIZE);
+
+		t = vm_map((unsigned long)KERNEL_LOAD_BASE, KERNEL_LOAD_SIZE, true);
+		memset(t, 0, KERNEL_LOAD_SIZE);
+		vm_unmap((unsigned long)t, KERNEL_LOAD_SIZE);
+
+		t = vm_map((unsigned long)INITRAMFS_LOAD_BASE, INITRAMFS_LOAD_SIZE, true);
+		memset(t, 0, INITRAMFS_LOAD_SIZE);
+		vm_unmap((unsigned long)t, INITRAMFS_LOAD_SIZE);
 	}
 
 	/* Start preloading kernel and ramdisk */

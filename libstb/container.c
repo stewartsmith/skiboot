@@ -19,14 +19,20 @@
 
 bool stb_is_container(const void *buf, size_t size)
 {
+	uint32_t *t;
 	ROM_container_raw *c;
+	bool ret = true;;
 
 	c = (ROM_container_raw*) buf;
 	if (!buf || size < SECURE_BOOT_HEADERS_SIZE)
 		return false;
-	if (be32_to_cpu(c->magic_number) != ROM_MAGIC_NUMBER )
-		return false;
-	return true;
+
+	t = vm_map((unsigned long)&c->magic_number, sizeof(*t), false);
+	if (be32_to_cpu(*t) != ROM_MAGIC_NUMBER)
+		ret = false;
+	vm_unmap((unsigned long)&c->magic_number, sizeof(*t));
+
+	return ret;
 }
 
 uint32_t stb_payload_magic(const void *buf, size_t size)

@@ -66,24 +66,27 @@ static struct mem_region skiboot_os_reserve = {
 	.type		= REGION_OS,
 };
 
-struct mem_region skiboot_heap = {
-	.name		= "ibm,firmware-heap",
-	.start		= HEAP_BASE,
-	.len		= HEAP_SIZE,
-	.type		= REGION_SKIBOOT_HEAP,
-};
-
 static struct mem_region skiboot_code_and_text = {
 	.name		= "ibm,firmware-code",
 	.start		= SKIBOOT_BASE,
 	.len		= HEAP_BASE - SKIBOOT_BASE,
+	.vm_mapped_len	= HEAP_BASE - SKIBOOT_BASE,
 	.type		= REGION_SKIBOOT_FIRMWARE,
+};
+
+struct mem_region skiboot_heap = {
+	.name		= "ibm,firmware-heap",
+	.start		= HEAP_BASE,
+	.len		= HEAP_SIZE,
+	.vm_mapped_len	= HEAP_SIZE,
+	.type		= REGION_SKIBOOT_HEAP,
 };
 
 static struct mem_region skiboot_after_heap = {
 	.name		= "ibm,firmware-data",
 	.start		= HEAP_BASE + HEAP_SIZE,
 	.len		= SKIBOOT_BASE + SKIBOOT_SIZE - (HEAP_BASE + HEAP_SIZE),
+	.vm_mapped_len	= SKIBOOT_BASE + SKIBOOT_SIZE - (HEAP_BASE + HEAP_SIZE),
 	.type		= REGION_SKIBOOT_FIRMWARE,
 };
 
@@ -153,14 +156,6 @@ static struct alloc_hdr *next_hdr(const struct mem_region *region,
 #if POISON_MEM_REGION == 1
 static void mem_poison(struct free_hdr *f)
 {
-	size_t poison_size = (void*)tailer(f) - (void*)(f+1);
-
-	/* We only poison up to a limit, as otherwise boot is
-	 * kinda slow */
-	if (poison_size > POISON_MEM_REGION_LIMIT)
-		poison_size = POISON_MEM_REGION_LIMIT;
-
-	memset(f+1, POISON_MEM_REGION_WITH, poison_size);
 }
 #endif
 
@@ -168,23 +163,42 @@ static void mem_poison(struct free_hdr *f)
 static void init_allocatable_region(struct mem_region *region)
 {
 	struct free_hdr *f = region_start(region);
+	unsigned long num_longs;
+	unsigned long *t;
+
 	assert(region->type == REGION_SKIBOOT_HEAP ||
 	       region->type == REGION_MEMORY);
-	f->hdr.num_longs = region->len / sizeof(long);
+
+	num_longs = region->len / sizeof(long);
+
+	if (!region->vm_mapped_len) {
+		/* SKIBOOT_BASE-SIZE regions already come mapped */
+		region->vm_mapped_len = PAGE_SIZE;
+		vm_map_global(region->name, region->start, PAGE_SIZE, true, false);
+	}
+
+	assert(PAGE_SIZE >= sizeof(*f));
+	assert(region->len >= PAGE_SIZE*2);
+
+	f->hdr.num_longs = num_longs;
 	f->hdr.free = true;
 	f->hdr.prev_free = false;
-	*tailer(f) = f->hdr.num_longs;
 	list_head_init(&region->free_list);
 	list_add(&region->free_list, &f->list);
-#if POISON_MEM_REGION == 1
+#if 0 && POISON_MEM_REGION == 1
 	mem_poison(f);
 #endif
+
+	t = vm_map((unsigned long)tailer(f), sizeof(long), true);
+	*t = num_longs;
+	vm_unmap((unsigned long)tailer(f), sizeof(long));
 }
 
 static void make_free(struct mem_region *region, struct free_hdr *f,
 		      const char *location, bool skip_poison)
 {
 	struct alloc_hdr *next;
+	unsigned long *t;
 
 #if POISON_MEM_REGION == 1
 	if (!skip_poison)
@@ -212,7 +226,9 @@ static void make_free(struct mem_region *region, struct free_hdr *f,
 	}
 
 	/* Fix up tailer. */
-	*tailer(f) = f->hdr.num_longs;
+	t = vm_map((unsigned long)tailer(f), sizeof(long), true);
+	*t = f->hdr.num_longs;
+	vm_unmap((unsigned long)tailer(f), sizeof(long));
 
 	/* If next is free, coalesce it */
 	next = next_hdr(region, &f->hdr);
@@ -401,6 +417,7 @@ static void *__mem_alloc(struct mem_region *region, size_t size, size_t align,
 	size_t alloc_longs, offset;
 	struct free_hdr *f;
 	struct alloc_hdr *next;
+	unsigned long newsz;
 
 	/* Align must be power of 2. */
 	assert(!((align - 1) & align));
@@ -454,6 +471,17 @@ found:
 	if (next) {
 		assert(next->prev_free);
 		next->prev_free = false;
+	}
+
+	newsz = ((void *)((unsigned long *)f + alloc_longs + offset) - region_start(region) + sizeof(struct free_hdr));
+	if (newsz > region->vm_mapped_len) {
+		/* TODO: unmap on free */
+		newsz += PAGE_SIZE-1;
+		newsz &= ~(PAGE_SIZE-1);
+		vm_map_global(location,
+			region->start + region->vm_mapped_len,
+			newsz - region->vm_mapped_len, true, false);
+		region->vm_mapped_len = newsz;
 	}
 
 	if (offset != 0) {
@@ -700,6 +728,7 @@ static struct mem_region *new_region(const char *name,
 	region->name = name;
 	region->start = start;
 	region->len = len;
+	region->vm_mapped_len = 0;
 	region->node = node;
 	region->type = type;
 	region->free_list.n.next = NULL;
@@ -1232,6 +1261,7 @@ void mem_region_release_unused(void)
 static void mem_clear_range(uint64_t s, uint64_t e)
 {
 	uint64_t res_start, res_end;
+	void *t;
 
 	/* Skip exception vectors */
 	if (s < EXCEPTION_VECTORS_END)
@@ -1271,7 +1301,10 @@ static void mem_clear_range(uint64_t s, uint64_t e)
 
 	prlog(PR_DEBUG, "Clearing region %llx-%llx\n",
 	      (long long)s, (long long)e);
-	memset((void *)s, 0, e - s);
+
+	t = vm_map(s, e - s, true);
+	memset(t, 0, e - s);
+	vm_unmap(s, e - s);
 }
 
 struct mem_region_clear_job_args {
@@ -1285,7 +1318,8 @@ static void mem_region_clear_job(void *data)
 	mem_clear_range(arg->s, arg->e);
 }
 
-#define MEM_REGION_CLEAR_JOB_SIZE (16ULL*(1<<30))
+/* Limited by 256MB segment size (could fix) */
+#define MEM_REGION_CLEAR_JOB_SIZE (128ULL*(1<<20))
 
 static struct cpu_job **mem_clear_jobs;
 static struct mem_region_clear_job_args *mem_clear_job_args;

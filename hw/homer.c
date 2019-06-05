@@ -121,6 +121,9 @@ static void homer_init_chip(struct proc_chip *chip)
 
 		chip->homer_base = hbase;
 		chip->homer_size = hsize;
+		/* slw late init and xive late init want to write to HOMER */
+		/* XXX: make it read only until then? */
+		vm_map_global("HOMER Image", hbase, hsize, true, false);
 	}
 
 	/*
@@ -147,6 +150,7 @@ static void homer_init_chip(struct proc_chip *chip)
 		chip->slw_base = sbase;
 		chip->slw_bar_size = ssize;
 		chip->slw_image_size = ssize; /* will be adjusted later */
+		/* XXX */
 	}
 
 	if (read_pba_bar(chip, bar_occ_common, &obase, &osize)) {
@@ -154,6 +158,7 @@ static void homer_init_chip(struct proc_chip *chip)
 		      obase, osize / 0x100000);
 		chip->occ_common_base = obase;
 		chip->occ_common_size = osize;
+		vm_map_global("OCC Common Area", obase, osize, false, false);
 	}
 }
 

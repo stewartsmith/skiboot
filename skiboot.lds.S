@@ -95,18 +95,33 @@ SECTIONS
 		KEEP(*(.cpuctrl.data))
 	}
 
+	/* Relocations */
 	. = ALIGN(0x10);
+	.dynamic : {
+		__dynamic_start = .;
+		*(.dynamic)
+		__dynamic_end = .;
+	}
+
+	. = ALIGN(0x10);
+	.rela.dyn : {
+		__rela_dyn_start = .;
+		*(.rela*)
+		__rela_dyn_end = .;
+	}
+
+	. = ALIGN(0x1000);
 	_stext = .;
  	.text : {
 		*(.text*)
 		*(.sfpr .glink)
 	}
 	_etext = .;
+	. = ALIGN(0x1000);
 
+	__rodata_start = .;
 	.rodata : {
-		__rodata_start = .;
 		*(.rodata .rodata.*)
-		__rodata_end = .;
 	}
 
 	. = ALIGN(0x10);
@@ -130,38 +145,21 @@ SECTIONS
 		*(.toc)
 	}
 
-	. = ALIGN(0x10);
-	.opal_table : {
-		__opal_table_start = .;
-		KEEP(*(.opal_table))
-		__opal_table_end = .;
-	}
-
 	.platforms : {
 		__platforms_start = .;
 		KEEP(*(.platforms))
 		__platforms_end = .;
 	}
 
-	/* Do I need to keep these ? */
-	.dynsym : { *(.dynsym)	}
-	.dynstr : { *(.dynstr)	}
-
-	/* Relocations */
 	. = ALIGN(0x10);
-	.dynamic : {
-		__dynamic_start = .;
-		*(.dynamic)
-		__dynamic_end = .;
+	.opal_table : {
+		__opal_table_start = .;
+		KEEP(*(.opal_table))
+		__opal_table_end = .;
 	}
+	__rodata_end = .;
 
-	. = ALIGN(0x10);
-	.rela.dyn : {
-		__rela_dyn_start = .;
-		*(.rela*)
-		__rela_dyn_end = .;
-	}
-	.plt    : { *(.plt) *(.iplt) }
+	. = ALIGN(0x1000);
 
 	.hash          : { *(.hash)   }
 	.gnu.hash      : { *(.gnu.hash) }
@@ -171,7 +169,6 @@ SECTIONS
 	.gnu.version_d : { *(.gnu.version_d) }
 	.gnu.version_r : { *(.gnu.version_r) }
 
-	. = ALIGN(0x10);
 	.sym_map : {
 		__sym_map_start = . ;
 		KEEP(*(.sym_map))
@@ -184,6 +181,9 @@ SECTIONS
 	 */
 	_romem_end = .;
 
+	. = ALIGN(0x1000);
+
+	_sdata = .;
 	.data : {
 		/*
 		 * A couple of things that need to be 4K aligned and
@@ -200,6 +200,10 @@ SECTIONS
 		*(.toc1)
 		*(.branch_lt)
 	}
+	.plt    : { *(.plt) *(.iplt) }
+	_edata = .;
+
+	. = ALIGN(0x1000);
 
 	/* We locate the BSS at 4M to leave room for the symbol map */
 	. = 0x400000;

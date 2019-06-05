@@ -389,6 +389,7 @@ static unsigned int cpu_idle_p8(enum cpu_wake_cause wake_on)
 	uint64_t lpcr = mfspr(SPR_LPCR) & ~SPR_LPCR_P8_PECE;
 	struct cpu_thread *cpu = this_cpu();
 	unsigned int vec = 0;
+	bool vm_setup = cpu->vm_setup;
 
 	if (!pm_enabled) {
 		prlog_once(PR_DEBUG, "cpu_idle_p8 called pm disabled\n");
@@ -429,8 +430,13 @@ static unsigned int cpu_idle_p8(enum cpu_wake_cause wake_on)
 	}
 	isync();
 
+	if (vm_setup)
+		vm_exit();
 	/* Enter nap */
 	vec = enter_p8_pm_state(false);
+	mtmsrd(MSR_RI, 1);
+	if (vm_setup)
+		vm_enter();
 
 skip_sleep:
 	/* Restore */
@@ -485,15 +491,24 @@ static unsigned int cpu_idle_p9(enum cpu_wake_cause wake_on)
 	isync();
 
 	if (sreset_enabled) {
+		bool vm_setup = cpu->vm_setup;
+
 		/* stop with EC=1 (sreset) and ESL=1 (enable thread switch). */
 		/* PSSCR SD=0 ESL=1 EC=1 PSSL=0 TR=3 MTL=0 RL=1 */
 		psscr = PPC_BIT(42) | PPC_BIT(43) |
 			PPC_BITMASK(54, 55) | PPC_BIT(63);
+		if (vm_setup)
+			vm_exit();
 		vec = enter_p9_pm_state(psscr);
+		/* XXX don't enable VM if 0x100 or 0x200 */
+		mtmsrd(MSR_RI, 1);
+		if (vm_setup)
+			vm_enter();
 	} else {
 		/* stop with EC=0 (resumes) which does not require sreset. */
 		/* PSSCR SD=0 ESL=0 EC=0 PSSL=0 TR=3 MTL=0 RL=1 */
 		psscr = PPC_BITMASK(54, 55) | PPC_BIT(63);
+		/* Can run with VM enabled */
 		enter_p9_pm_lite_state(psscr);
 	}
 
@@ -536,12 +551,10 @@ static void cpu_idle_pm(enum cpu_wake_cause wake_on)
 		default:
 			break;
 		}
-		mtmsrd(MSR_RI, 1);
 
 	} else if (vec == 0x200) {
 		exception_entry_pm_mce();
 		enable_machine_check();
-		mtmsrd(MSR_RI, 1);
 	}
 }
 
@@ -1374,7 +1387,7 @@ static int64_t opal_return_cpu(void)
 		printf("OPAL in_opal_call=%u\n", this_cpu()->in_opal_call);
 	}
 
-	__secondary_cpu_entry();
+	__return_cpu_entry();
 
 	return OPAL_HARDWARE; /* Should not happen */
 }

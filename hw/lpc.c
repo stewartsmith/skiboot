@@ -1259,6 +1259,8 @@ static void lpc_init_chip_p9(struct dt_node *opb_node)
 	if (!lpc_node)
 		return;
 
+	vm_map_global("LPC MMIO", addr, 0x100000000UL, true, true);
+
 	lpc = zalloc(sizeof(struct lpcm));
 	assert(lpc);
 	lpc->chip_id = gcid;

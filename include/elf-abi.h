@@ -34,7 +34,15 @@
 static inline uint64_t function_entry_address(void *func)
 {
 #ifdef ELF_ABI_v2
-	u32 *insn = func;
+	u32 *i;
+	u32 insn;
+	u32 insn2;
+
+	i = vm_map((unsigned long)func, sizeof(insn*2), false);
+	insn = *i;
+	insn2 = *(i+1);
+	vm_unmap((unsigned long)func, sizeof(insn*2));
+
 	/*
 	 * A PPC64 ABIv2 function may have a local and a global entry
 	 * point. We use the local entry point for branch tables called
@@ -51,12 +59,12 @@ static inline uint64_t function_entry_address(void *func)
 	 * lis   r2,XXXX
 	 * addi  r2,r2,XXXX
 	 */
-	if ((((*insn & OP_RT_RA_MASK) == ADDIS_R2_R12) ||
-	     ((*insn & OP_RT_RA_MASK) == LIS_R2)) &&
-	    ((*(insn+1) & OP_RT_RA_MASK) == ADDI_R2_R2))
-		return (uint64_t)(insn + 2);
+	if ((((insn & OP_RT_RA_MASK) == ADDIS_R2_R12) ||
+	     ((insn & OP_RT_RA_MASK) == LIS_R2)) &&
+	    ((insn2 & OP_RT_RA_MASK) == ADDI_R2_R2))
+		return (uint64_t)(i + 2);
 	else
-		return (uint64_t)func;
+		return (uint64_t)i;
 #else
 	return *(uint64_t *)func;
 #endif

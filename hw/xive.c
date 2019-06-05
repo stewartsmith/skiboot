@@ -1621,6 +1621,7 @@ static bool xive_configure_bars(struct xive *x)
 
 	/* IC BAR */
 	phys_map_get(chip_id, XIVE_IC, 0, (uint64_t *)&x->ic_base, &x->ic_size);
+	vm_map_global("XIVE IC", (unsigned long)x->ic_base, x->ic_size, true, true);
 	val = (uint64_t)x->ic_base | CQ_IC_BAR_VALID;
 	if (IC_PAGE_SIZE == 0x10000) {
 		val |= CQ_IC_BAR_64K;
@@ -1636,6 +1637,8 @@ static bool xive_configure_bars(struct xive *x)
 	 * all phys_map_get(XIVE_TM) calls.
 	 */
 	phys_map_get(0, XIVE_TM, 0, (uint64_t *)&x->tm_base, &x->tm_size);
+	if (chip_id == 0)
+		vm_map_global("XIVE TM", (unsigned long)x->tm_base, x->tm_size, true, true);
 	val = (uint64_t)x->tm_base | CQ_TM_BAR_VALID;
 	if (TM_PAGE_SIZE == 0x10000) {
 		x->tm_shift = 16;
@@ -1651,6 +1654,7 @@ static bool xive_configure_bars(struct xive *x)
 
 	/* PC BAR. Clear first, write mask, then write value */
 	phys_map_get(chip_id, XIVE_PC, 0, (uint64_t *)&x->pc_base, &x->pc_size);
+	vm_map_global("XIVE PC", (unsigned long)x->pc_base, x->pc_size, true, true);
 	xive_regwx(x, CQ_PC_BAR, 0);
 	if (x->last_reg_error)
 		return false;
@@ -1665,6 +1669,7 @@ static bool xive_configure_bars(struct xive *x)
 
 	/* VC BAR. Clear first, write mask, then write value */
 	phys_map_get(chip_id, XIVE_VC, 0, (uint64_t *)&x->vc_base, &x->vc_size);
+	vm_map_global("XIVE VC", (unsigned long)x->vc_base, x->vc_size, true, true);
 	xive_regwx(x, CQ_VC_BAR, 0);
 	if (x->last_reg_error)
 		return false;

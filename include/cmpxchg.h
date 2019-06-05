@@ -18,6 +18,9 @@
 #define __CMPXCHG_H
 
 #ifndef __TEST__
+#include <stdint.h>
+#include <processor.h>
+
 /*
  * Bare cmpxchg, no barriers.
  */

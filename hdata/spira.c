@@ -1578,11 +1578,18 @@ static void fixup_spira(void)
 
 int parse_hdat(bool is_opal)
 {
+	int ret = 0;
+
 	cpu_type = PVR_TYPE(mfspr(SPR_PVR));
 
 	prlog(PR_DEBUG, "Parsing HDAT...\n");
 
+	vm_map_global("SPIRA", SKIBOOT_BASE + SPIRA_OFF, sizeof(spira), true, false);
 	fixup_spira();
+	vm_unmap_global(SKIBOOT_BASE + SPIRA_OFF, sizeof(spira));
+
+	vm_map_global("SPIRA", SKIBOOT_BASE + SPIRA_OFF, sizeof(spira), false, false);
+	vm_map_global("SPIRA-H", SKIBOOT_BASE + SPIRAH_OFF, sizeof(spirah), false, false);
 
 	/*
 	 * Basic DT root stuff
@@ -1603,9 +1610,12 @@ int parse_hdat(bool is_opal)
 	dt_init_led_node();
 
 	/* Parse SPPACA and/or PCIA */
-	if (!pcia_parse())
-		if (paca_parse() < 0)
-			return -1;
+	if (!pcia_parse()) {
+		if (paca_parse() < 0) {
+			ret = -1;
+			goto out;
+		}
+	}
 
 	/* IPL params */
 	add_iplparams();
@@ -1652,6 +1662,9 @@ int parse_hdat(bool is_opal)
 		node_stb_parse();
 
 	prlog(PR_DEBUG, "Parsing HDAT...done\n");
+out:
+	vm_unmap_global(SKIBOOT_BASE + SPIRA_OFF, sizeof(spira));
+	vm_unmap_global(SKIBOOT_BASE + SPIRAH_OFF, sizeof(spirah));
 
-	return 0;
+	return ret;
 }

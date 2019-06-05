@@ -52,7 +52,9 @@
 #define SPR_SRR1	0x01b	/* RW: Exception save/restore reg 1 */
 #define SPR_CFAR	0x01c	/* RW: Come From Address Register */
 #define SPR_AMR		0x01d	/* RW: Authority Mask Register */
+#define SPR_PID		0x030	/* RW: PID register */
 #define SPR_IAMR	0x03d	/* RW: Instruction Authority Mask Register */
+#define SPR_UAMOR	0x09d
 #define SPR_RPR		0x0ba   /* RW: Relative Priority Register */
 #define SPR_TBRL	0x10c	/* RO: Timebase low */
 #define SPR_TBRU	0x10d	/* RO: Timebase high */
@@ -74,10 +76,12 @@
 #define SPR_HSRR1	0x13b	/* RW: HV Exception save/restore reg 1 */
 #define SPR_TFMR	0x13d
 #define SPR_LPCR	0x13e
+#define SPR_LPID	0x13f	/* RW: LPID register */
 #define SPR_HMER	0x150	/* Hypervisor Maintenance Exception */
 #define SPR_HMEER	0x151	/* HMER interrupt enable mask */
 #define SPR_PCR		0x152
 #define SPR_AMOR	0x15d
+#define SPR_PTCR	0x1d0	/* RW: Partition table control register */
 #define SPR_PSSCR	0x357   /* RW: Stop status and control (ISA 3) */
 #define SPR_TSCR	0x399
 #define SPR_HID0	0x3f0
@@ -92,6 +96,11 @@
 #define SPR_SRR1_PM_WAKE_MASK	0x3c0000	/* PM wake reason for P8/9 */
 #define SPR_SRR1_PM_WAKE_SRESET	0x100000
 #define SPR_SRR1_PM_WAKE_MCE	0x3c0000	/* Use reserved value for MCE */
+
+/* Bits in DSISR */
+
+#define	DSISR_ISSTORE		0x02000000
+
 
 /* Bits in LPCR */
 
@@ -322,9 +331,9 @@ static inline void isync(void)
 /*
  * Cache sync
  */
-static inline void sync_icache(void)
+static inline void sync_icache(unsigned long ptr)
 {
-	asm volatile("sync; icbi 0,%0; sync; isync" : : "r" (0) : "memory");
+	asm volatile("sync; icbi 0,%0; sync; isync" : : "r" (ptr) : "memory");
 }
 
 /*

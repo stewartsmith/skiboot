@@ -166,7 +166,7 @@ static void slw_patch_reset(void)
 		*(sav++) = *(dst);
 		*(dst++) = *(src++);
 	}
-	sync_icache();
+	sync_icache(0);
 }
 
 static void slw_unpatch_reset(void)
@@ -182,7 +182,7 @@ static void slw_unpatch_reset(void)
 		*(dst++) = *(sav++);
 		src++;
 	}
-	sync_icache();
+	sync_icache(0);
 }
 
 static bool slw_general_init(struct proc_chip *chip, struct cpu_thread *c)

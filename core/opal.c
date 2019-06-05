@@ -68,7 +68,16 @@ void opal_table_init(void)
 	prlog(PR_DEBUG, "OPAL table: %p .. %p, branch table: %p\n",
 	      s, e, opal_branch_table);
 	while(s < e) {
-		opal_branch_table[s->token] = function_entry_address(s->func);
+		uint64_t f;
+		uint64_t *t;
+
+		f = function_entry_address(s->func);
+
+		t = vm_map((unsigned long)&opal_branch_table[s->token], sizeof(*t), true);
+
+		*t = f;
+		vm_unmap((unsigned long)&opal_branch_table[s->token], sizeof(*t));
+
 		opal_num_args[s->token] = s->nargs;
 		s++;
 	}
@@ -331,9 +340,16 @@ opal_call(OPAL_QUIESCE, opal_quiesce, 2);
 
 void __opal_register(uint64_t token, void *func, unsigned int nargs)
 {
+	uint64_t f;
+	uint64_t *t;
+
 	assert(token <= OPAL_LAST);
 
-	opal_branch_table[token] = function_entry_address(func);
+	f = function_entry_address(func);
+
+	t = vm_map((unsigned long)&opal_branch_table[token], sizeof(uint64_t), true);
+	*t = f;
+	vm_unmap((unsigned long)&opal_branch_table[token], sizeof(uint64_t));
 	opal_num_args[token] = nargs;
 }
 

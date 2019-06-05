@@ -5773,6 +5773,7 @@ static void phb4_probe_stack(struct dt_node *stk_node, uint32_t pec_index,
 	uint64_t val, phb_bar = 0, irq_bar = 0, bar_en;
 	uint64_t mmio0_bar = 0, mmio0_bmask, mmio0_sz;
 	uint64_t mmio1_bar = 0, mmio1_bmask, mmio1_sz;
+	uint64_t bar_sz;
 	uint64_t reg[4];
 	void *foo;
 	uint64_t mmio_win[4];
@@ -5802,7 +5803,8 @@ static void phb4_probe_stack(struct dt_node *stk_node, uint32_t pec_index,
 	bar_en = 0;
 
 	/* Initialize PHB register BAR */
-	phys_map_get(gcid, PHB4_REG_SPC, phb_num, &phb_bar, NULL);
+	phys_map_get(gcid, PHB4_REG_SPC, phb_num, &phb_bar, &bar_sz);
+	vm_map_global("PHB REGS", phb_bar, bar_sz, true, true);
 	rc = xscom_write(gcid, nest_stack + XPEC_NEST_STK_PHB_REG_BAR,
 			 phb_bar << 8);
 
@@ -5816,18 +5818,21 @@ static void phb4_probe_stack(struct dt_node *stk_node, uint32_t pec_index,
 	bar_en |= XPEC_NEST_STK_BAR_EN_PHB;
 
 	/* Same with INT BAR (ESB) */
-	phys_map_get(gcid, PHB4_XIVE_ESB, phb_num, &irq_bar, NULL);
+	phys_map_get(gcid, PHB4_XIVE_ESB, phb_num, &irq_bar, &bar_sz);
+	vm_map_global("PHB IRQ", irq_bar, bar_sz, true, true);
 	xscom_write(gcid, nest_stack + XPEC_NEST_STK_IRQ_BAR, irq_bar << 8);
 	bar_en |= XPEC_NEST_STK_BAR_EN_INT;
 
 
 	/* Same with MMIO windows */
 	phys_map_get(gcid, PHB4_64BIT_MMIO, phb_num, &mmio0_bar, &mmio0_sz);
+	vm_map_global("PHB MMIO0", mmio0_bar, mmio0_sz, true, true);
 	mmio0_bmask =  (~(mmio0_sz - 1)) & 0x00FFFFFFFFFFFFFFULL;
 	xscom_write(gcid, nest_stack + XPEC_NEST_STK_MMIO_BAR0, mmio0_bar << 8);
 	xscom_write(gcid, nest_stack + XPEC_NEST_STK_MMIO_BAR0_MASK, mmio0_bmask << 8);
 
 	phys_map_get(gcid, PHB4_32BIT_MMIO, phb_num, &mmio1_bar, &mmio1_sz);
+	vm_map_global("PHB MMIO1", mmio1_bar, mmio1_sz, true, true);
 	mmio1_bmask =  (~(mmio1_sz - 1)) & 0x00FFFFFFFFFFFFFFULL;
 	xscom_write(gcid, nest_stack + XPEC_NEST_STK_MMIO_BAR1, mmio1_bar << 8);
 	xscom_write(gcid, nest_stack + XPEC_NEST_STK_MMIO_BAR1_MASK, mmio1_bmask << 8);

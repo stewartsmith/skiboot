@@ -600,6 +600,8 @@ void early_uart_init(void)
 	if (!mmio_uart_base)
 		return;
 
+	vm_map_global("UART MMIO", (unsigned long)mmio_uart_base, 8, true, true);
+
 	clk = dt_prop_get_u32(uart_node, "clock-frequency");
 	baud = dt_prop_get_u32(uart_node, "current-speed");
 
@@ -608,6 +610,7 @@ void early_uart_init(void)
 		prlog(PR_DEBUG, "UART: Using UART at %p\n", mmio_uart_base);
 	} else {
 		prerror("UART: Early init failed!");
+		vm_unmap_global((unsigned long)mmio_uart_base, 8);
 		mmio_uart_base = NULL;
 	}
 }
@@ -618,9 +621,6 @@ void uart_init(void)
 	struct dt_node *n;
 	char *path __unused;
 	const uint32_t *irqp;
-
-	/* Clean up after early_uart_init() */
-	mmio_uart_base = NULL;
 
 	/* UART lock is in the console path and thus must block
 	 * printf re-entrancy
@@ -639,11 +639,26 @@ void uart_init(void)
 	 * directly mapped UARTs in simulation environments
 	 */
 	if (n->parent == dt_root) {
+		void *base;
+
 		printf("UART: Found at root !\n");
-		mmio_uart_base = (void *)dt_translate_address(n, 0, NULL);
-		if (!mmio_uart_base) {
+
+		base = (void *)dt_translate_address(n, 0, NULL);
+		if (!base) {
 			printf("UART: Failed to translate address !\n");
 			return;
+		}
+
+		if (mmio_uart_base != base) {
+			void *old;
+
+			vm_map_global("UART MMIO", (unsigned long)base, 8, true, true);
+			old = mmio_uart_base;
+			mmio_uart_base = base;
+
+			/* Clean up after early_uart_init() */
+			if (old)
+				vm_unmap_global((unsigned long)old, 8);
 		}
 
 		/* If it has an interrupt properly, we consider this to be
@@ -673,6 +688,12 @@ void uart_init(void)
 		if (irqp) {
 			lpc_irq = be32_to_cpu(*irqp);
 			prlog(PR_DEBUG, "UART: Using LPC IRQ %d\n", lpc_irq);
+		}
+
+		/* Clean up after early_uart_init() */
+		if (mmio_uart_base) {
+			vm_unmap_global((unsigned long)mmio_uart_base, 8);
+			mmio_uart_base = NULL;
 		}
 	}
 
