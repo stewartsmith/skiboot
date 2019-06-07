@@ -154,7 +154,7 @@ static struct alloc_hdr *next_hdr(const struct mem_region *region,
 }
 
 #if POISON_MEM_REGION == 1
-static void mem_poison(struct free_hdr *f)
+static void mem_poison(struct free_hdr *f __unused)
 {
 }
 #endif

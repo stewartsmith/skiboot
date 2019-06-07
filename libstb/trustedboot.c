@@ -174,7 +174,7 @@ out_free:
 int trustedboot_measure(enum resource_id id, void *buf, size_t len)
 {
 	uint8_t digest[SHA512_DIGEST_LENGTH];
-	void *buf_aux;
+	void *buf_aux, *vbuf;
 	size_t len_aux;
 	const char *name;
 	TPM_Pcr pcr;
@@ -232,7 +232,9 @@ int trustedboot_measure(enum resource_id id, void *buf, size_t len)
 		len_aux = len;
 	}
 
-	rc = call_cvc_sha512(buf_aux, len_aux, digest, SHA512_DIGEST_LENGTH);
+	vbuf = vm_map((unsigned long)buf_aux, len_aux, false);
+	rc = call_cvc_sha512(vbuf, len_aux, digest, SHA512_DIGEST_LENGTH);
+	vm_unmap((unsigned long)buf_aux, len_aux);
 
 	if (rc == OPAL_SUCCESS) {
 		prlog(PR_NOTICE, "%s hash calculated\n", name);

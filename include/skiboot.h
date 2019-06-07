@@ -352,6 +352,7 @@ extern int fake_nvram_write(uint32_t offset, void *src, uint32_t size);
 
 bool vm_realmode(void);
 void vm_map_global(const char *name, unsigned long addr, unsigned long len, bool rw, bool ci);
+void vm_map_global_text(const char *name, unsigned long addr, unsigned long len);
 void vm_unmap_global(unsigned long addr, unsigned long len);
 void *vm_map(unsigned long addr, unsigned long len, bool rw);
 void vm_unmap(unsigned long addr, unsigned long len);

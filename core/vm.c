@@ -360,7 +360,7 @@ void vm_map_global(const char *name, unsigned long addr, unsigned long len, bool
 	__vm_map(name, addr, len, addr, true, rw, false, ci, false);
 }
 
-static void vm_map_global_text(const char *name, unsigned long addr, unsigned long len)
+void vm_map_global_text(const char *name, unsigned long addr, unsigned long len)
 {
 	__vm_map(name, addr, len, addr, true, false, true, false, false);
 }
@@ -611,15 +611,26 @@ bool __nomcount vm_isi(uint64_t nia)
 {
 	struct cpu_thread *c = this_cpu();
 	bool vm_setup = c->vm_setup;
+	struct vm_map *vmm;
 
 	assert(vm_setup);
 
-	if (nia < (unsigned long)_stext)
-		return false;
-	if (nia >= (unsigned long)_etext)
-		return false;
+	lock(&vm_maps_lock);
+	list_for_each(&vm_maps, vmm, list) {
+		assert(vmm->pa == vmm->address);
+		if (nia >= vmm->address && nia < vmm->address + vmm->length) {
+			if (!vmm->executable)
+				printf("Page fault at NIA:0x%016llx NX mapping!\n", nia);
+			goto found;
+		}
+	}
 
-	c->vm_setup = false;
+	prerror("Page fault, no mapping for NIA:0x%016llx !\n", nia);
+
+found:
+	unlock(&vm_maps_lock);
+        c->vm_setup = false;
+	printf("Page fault, mapping NIA:0x%016llx !\n", nia);
 	htab_install(nia, nia, 0, 1, 0, false);
 	c->vm_setup = true;
 

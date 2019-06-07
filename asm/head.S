@@ -238,6 +238,7 @@ _exception:
 	mr	%r3,%r1
 	LOAD_IMM64(%r4, SKIBOOT_BASE)
 	LOAD_IMM32(%r5, exception_entry_foo - __head)
+	mfspr %r2, SPR_HSPRG0
 	add	%r4,%r4,%r5
 	mtctr	%r4
 	bctr
@@ -367,6 +368,7 @@ boot_entry:
 	LOAD_IMM32(%r2,__toc_start - __head)
 	LOAD_IMM64(%r29, SKIBOOT_BASE)
 	add	%r2,%r2,%r29
+	mtspr SPR_HSPRG0, %r2
 
 	/* Fixup our MSR (remove TA) */
 	LOAD_IMM64(%r3, (MSR_HV | MSR_SF))

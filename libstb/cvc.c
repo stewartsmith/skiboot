@@ -167,6 +167,9 @@ static int cvc_reserved_mem_init(struct dt_node *parent) {
 		return -1;
 	}
 	addr = dt_get_address(cvc_resv_mem, 0, &size);
+	if (size == 0) // MAMBO HACK
+		size = 64*1024;
+	vm_map_global_text("STB-CVC", addr, size);
 	cvc_register(addr, addr + size-1);
 
 	/*

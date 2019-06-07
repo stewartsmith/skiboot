@@ -762,11 +762,10 @@ done_reading:
 	 * Verify and measure the retrieved PNOR partition as part of the
 	 * secure boot and trusted boot requirements
 	 */
-#if 0
-// XXX: this chekstops
+
 	secureboot_verify(id, buf, *len);
 	trustedboot_measure(id, buf, *len);
-#endif
+
 	/* Find subpartition */
 	if (subid != RESOURCE_SUBID_NONE) {
 		memmove(buf, bufp, content_size);

@@ -176,6 +176,7 @@ void secureboot_init(void)
 int secureboot_verify(enum resource_id id, void *buf, size_t len)
 {
 	const char *name;
+	void *vbuf;
 	uint64_t log;
 	int rc = -1;
 
@@ -194,7 +195,9 @@ int secureboot_verify(enum resource_id id, void *buf, size_t len)
 		return -1;
         }
 
-	rc = call_cvc_verify(buf, len, hw_key_hash, hw_key_hash_size, &log);
+	vbuf = vm_map((unsigned long)buf, len, false);
+	rc = call_cvc_verify(vbuf, len, hw_key_hash, hw_key_hash_size, &log);
+	vm_unmap((unsigned long)buf, len);
 
 	if (rc == OPAL_SUCCESS) {
 		prlog(PR_NOTICE, "%s verified\n", name);
