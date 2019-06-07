@@ -306,6 +306,19 @@ if { [info exists env(SKIBOOT_NVRAM)] } {
     mysim mcm 0 memory fread $fake_nvram_start $fake_nvram_size $fake_nvram_file
 }
 
+set cvc_code_start [expr $fake_nvram_start + $fake_nvram_size]
+set cvc_code_end $cvc_code_start
+set cvc_code_size 0
+if { [info exists env(SKIBOOT_CVC_CODE)] } {
+
+    set cvc_file $env(SKIBOOT_CVC_CODE)
+
+    set cvc_code_size [file size $cvc_file]
+    mysim mcm 0 memory fread $cvc_code_start $cvc_code_size $cvc_file
+    set cvc_code_end [expr $cvc_code_start + $cvc_code_size]
+}
+
+
 # Add device tree entry for NVRAM
 set reserved_memory [mysim of addchild $root_node "reserved-memory" ""]
 mysim of addprop $reserved_memory int "#size-cells" 2
@@ -321,6 +334,18 @@ set fake_nvram_node [mysim of addchild $reserved_memory "ibm,fake-nvram" ""]
 set reg [list $fake_nvram_start $fake_nvram_size ]
 mysim of addprop $fake_nvram_node array64 "reg" reg
 mysim of addprop $fake_nvram_node empty "name" "ibm,fake-nvram"
+
+set hb [mysim of addchild $root_node "ibm,hostboot" ""]
+set hb_reserved_memory [mysim of addchild $hb "reserved-memory" ""]
+set hb_cvc_code_node [mysim of addchild $hb_reserved_memory "ibm,secure-crypt-algo-code" [format %x $cvc_code_start]]
+set reg [list $cvc_code_start $cvc_code_size]
+mysim of addprop $hb_cvc_code_node array64 "reg" reg
+mysim of addprop $hb_cvc_code_node empty "name" "ibm,secure-crypt-algo-code"
+
+set cvc_code_node [mysim of addchild $reserved_memory "ibm,secure-crypt-algo-code" [format %x $cvc_code_start]]
+set reg [list $cvc_code_start $cvc_code_size]
+mysim of addprop $cvc_code_node array64 "reg" reg
+mysim of addprop $cvc_code_node empty "name" "ibm,secure-crypt-algo-code"
 
 set opal_node [mysim of addchild $root_node "ibm,opal" ""]
 
@@ -546,10 +571,12 @@ mconfig enable_stb SKIBOOT_ENABLE_MAMBO_STB 0
 
 if { [info exists env(SKIBOOT_ENABLE_MAMBO_STB)] } {
     set stb_node [ mysim of addchild $root_node "ibm,secureboot" "" ]
-    mysim of addprop $stb_node string "compatible" "ibm,secureboot-v1-softrom"
+#    mysim of addprop $stb_node string "compatible" "ibm,secureboot-v1-softrom"
+    mysim of addprop $stb_node string "compatible" "ibm,secureboot-v2"
 #    mysim of addprop $stb_node string "secure-enabled" ""
     mysim of addprop $stb_node string "trusted-enabled" ""
     mysim of addprop $stb_node string "hash-algo" "sha512"
+    mysim of addprop $stb_node int "hw-key-hash-size" 64
     set hw_key_hash {}
     lappend hw_key_hash 0x40d487ff
     lappend hw_key_hash 0x7380ed6a
@@ -568,6 +595,22 @@ if { [info exists env(SKIBOOT_ENABLE_MAMBO_STB)] } {
     lappend hw_key_hash 0xfb708535
     lappend hw_key_hash 0x1d01d6d1
     mysim of addprop $stb_node array "hw-key-hash" hw_key_hash
+
+    set cvc_node [ mysim of addchild $stb_node "ibm,cvc" "" ]
+    mysim of addprop $cvc_node string "compatible" "ibm,container-verification-code"
+    mysim of addprop $cvc_node int "memory-region" $hb_cvc_code_node
+
+    set sha_node [ mysim of addchild $cvc_node "ibm,cvc-service" [format %x 0x40]]
+    mysim of addprop $sha_node string "name" "ibm,cvc-service"
+    mysim of addprop $sha_node string "compatible" "ibm,cvc-sha512"
+    mysim of addprop $sha_node int "reg" 0x40
+    mysim of addprop $sha_node int "version" 1
+
+    set verify_node [ mysim of addchild $cvc_node "ibm,cvc-service" [format %x 0x50]]
+    mysim of addprop $verify_node string "name" "ibm,cvc-service"
+    mysim of addprop $verify_node string "compatible" "ibm,cvc-verify"
+    mysim of addprop $verify_node int "reg" 0x50
+    mysim of addprop $verify_node int "version" 1
 }
 
 # Kernel command line args, appended to any from the device tree
