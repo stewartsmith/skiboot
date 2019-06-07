@@ -277,7 +277,7 @@ static void __vm_map(const char *name, unsigned long addr, unsigned long len, un
 		}
 
 		if (!vm_strict) {
-			printf("vm_map_global %s %lx-%lx collided with vmm:%s %llx-%llx\n", name, addr, addr + len, vmm->name, vmm->address, vmm->address + vmm->length);
+			prerror("vm_map_global %s %lx-%lx collided with vmm:%s %llx-%llx\n", name, addr, addr + len, vmm->name, vmm->address, vmm->address + vmm->length);
 			list_add_before(&vm_maps, &new->list, &vmm->list);
 			goto found;
 		}
@@ -328,7 +328,7 @@ static void __vm_unmap(unsigned long addr, unsigned long len, bool local)
 	vmm = NULL;
 	unlock(&vm_maps_lock);
 	if (!vm_strict) {
-		printf("unmap didn't find anything\n");
+		prerror("unmap didn't find anything\n");
 		backtrace();
 		goto out;
 	}
@@ -464,7 +464,7 @@ void vm_enter(void)
 	assert(vm_setup);
 	if (c->vm_setup) {
 		mtmsr(mfmsr() | (MSR_IR|MSR_DR));
-		printf("CPU:%d vm_enter already entered\n", c->pir);
+		prerror("CPU:%d vm_enter already entered\n", c->pir);
 		backtrace();
 		return;
 	}
@@ -479,7 +479,7 @@ void vm_exit(void)
 	assert(vm_setup);
 	if (!c->vm_setup) {
 		mtmsr(mfmsr() & ~(MSR_IR|MSR_DR));
-		printf("CPU:%d vm_exit already exited\n", c->pir);
+		prerror("CPU:%d vm_exit already exited\n", c->pir);
 		backtrace();
 		return;
 	}
@@ -563,13 +563,13 @@ bool __nomcount vm_dsi(uint64_t nia, uint64_t dar, bool store)
 		else
 			ret = false;
 		unlock(&vm_maps_lock);
-		printf("Page fault with no VMM at NIA:0x%016llx DAR:0x%016llx, store:%d\n", nia, dar, store);
+		prerror("Page fault with no VMM at NIA:0x%016llx DAR:0x%016llx, store:%d\n", nia, dar, store);
 		backtrace();
 		goto out;
 	}
 	unlock(&vm_maps_lock);
 not_found:
-	printf("  vmm not found\n");
+	prerror("  vmm not found\n");
 	ret = false;
 	assert(0);
 	goto out;
@@ -578,7 +578,7 @@ found:
 	pa = vmm->pa + (dar & ~(PAGE_SIZE - 1)) - vmm->address;
 	if (!vmm->readable) {
 		unlock(&vm_maps_lock);
-		printf("  vmm not readable\n");
+		prerror("  vmm not readable\n");
 		ret = false;
 		assert(0);
 		goto out;
@@ -587,12 +587,12 @@ found:
 		if (!vm_strict) {
 			htab_install(dar, pa, store, 0, vmm->ci, local);
 			unlock(&vm_maps_lock);
-			printf("Page fault store to RO VMM:%s at NIA:0x%016llx DAR:0x%016llx\n", vmm->name, nia, dar);
+			prerror("Page fault store to RO VMM:%s at NIA:0x%016llx DAR:0x%016llx\n", vmm->name, nia, dar);
 			backtrace();
 			goto out;
 		}
 		unlock(&vm_maps_lock);
-		printf("  vmm not writeable\n");
+		prerror("  vmm not writeable\n");
 		ret = false;
 		assert(0);
 		goto out;
@@ -620,7 +620,7 @@ bool __nomcount vm_isi(uint64_t nia)
 		assert(vmm->pa == vmm->address);
 		if (nia >= vmm->address && nia < vmm->address + vmm->length) {
 			if (!vmm->executable)
-				printf("Page fault at NIA:0x%016llx NX mapping!\n", nia);
+				prerror("Page fault at NIA:0x%016llx NX mapping!\n", nia);
 			goto found;
 		}
 	}
@@ -630,7 +630,6 @@ bool __nomcount vm_isi(uint64_t nia)
 found:
 	unlock(&vm_maps_lock);
         c->vm_setup = false;
-	printf("Page fault, mapping NIA:0x%016llx !\n", nia);
 	htab_install(nia, nia, 0, 1, 0, false);
 	c->vm_setup = true;
 
@@ -747,12 +746,12 @@ void vm_init(void)
 done:
 	if (1) {
 		struct vm_map *vmm;
-		printf("VMM: SETUP\n");
-		printf(" PRTAB:%p\n", prtab);
-		printf(" HTAB: %p\n", htab);
-		printf(" Global mappings\n");
+		prlog(PR_DEBUG, "VMM: SETUP\n");
+		prlog(PR_DEBUG, " PRTAB:%p\n", prtab);
+		prlog(PR_DEBUG, " HTAB: %p\n", htab);
+		prlog(PR_DEBUG, " Global mappings\n");
 		list_for_each(&vm_maps, vmm, list)
-			printf("%28s 0x%08llx-0x%08llx\n", vmm->name,
+			prlog(PR_DEBUG, "%28s 0x%08llx-0x%08llx\n", vmm->name,
 				vmm->address, vmm->address + vmm->length);
 	}
 
@@ -797,10 +796,10 @@ void vm_destroy(void)
 
 	if (1) {
 		struct vm_map *vmm;
-		printf("VMM: TEARDOWN\n");
-		printf(" Global mappings\n");
+		prlog(PR_DEBUG, "VMM: TEARDOWN\n");
+		prlog(PR_DEBUG, " Global mappings\n");
 		list_for_each(&vm_maps, vmm, list)
-			printf("%28s 0x%08llx-0x%08llx\n", vmm->name,
+			prlog(PR_DEBUG, "%28s 0x%08llx-0x%08llx\n", vmm->name,
 				vmm->address, vmm->address + vmm->length);
 	}
 
