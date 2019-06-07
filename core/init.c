@@ -1074,7 +1074,7 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 	init_locks();
 
 	/* Enter virtual memory mode */
-	vm_init();
+	vm_init(false);
 
 	/* Create the OPAL call table early on, entries can be overridden
 	 * later on (FSP console code for example)

@@ -671,6 +671,8 @@ reset_fast_reboot_wakeup:
 	addis	%r2,%r30,(__toc_start - __head)@ha
 	addi	%r2,%r2,(__toc_start - __head)@l
 
+	mtspr SPR_HSPRG0, %r2
+
 	/* Go to C ! */
 	bl	fast_reboot_entry
 	b	.

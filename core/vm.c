@@ -690,7 +690,7 @@ static void cpu_all_destroy_vm(void)
 	free(jobs);
 }
 
-void vm_init(void)
+void vm_init(bool fast_reboot)
 {
 	unsigned long stack_start = SKIBOOT_BASE + SKIBOOT_SIZE;
 	unsigned long stack_end = stack_start + (cpu_max_pir + 1)*STACK_SIZE;
@@ -721,26 +721,29 @@ void vm_init(void)
 	if (vm_globals_allocated)
 		goto done;
 
-	vm_map_global_text("OPAL text", (unsigned long)_stext,
-		(unsigned long)_etext - (unsigned long)_stext);
-	vm_map_global("OPAL rodata", (unsigned long)__rodata_start,
-		(unsigned long)__rodata_end - (unsigned long)__rodata_start,
-		false, false);
-	vm_map_global("OPAL data", (unsigned long)_sdata,
-		(unsigned long)_edata - (unsigned long)_sdata,
-		true, false);
-	vm_map_global("OPAL bss", (unsigned long)_sbss,
-		(unsigned long)_ebss - (unsigned long)_sbss,
-		true, false);
-	vm_map_global("OPAL sym map", (unsigned long)__sym_map_start,
-		(unsigned long)__sym_map_end - (unsigned long)__sym_map_start,
-		false, false);
-	vm_map_global("OPAL heap", HEAP_BASE, HEAP_SIZE, true, false);
-	vm_map_global("Memory console", INMEM_CON_START, INMEM_CON_LEN, true, false);
-	vm_map_global("Hostboot console", HBRT_CON_START, HBRT_CON_LEN, false, false);
-	vm_map_global("SPIRA heap", SPIRA_HEAP_BASE, SPIRA_HEAP_SIZE, false, false);
-	vm_map_global("PSI TCE table", PSI_TCE_TABLE_BASE, PSI_TCE_TABLE_SIZE_P8, false, false);
-	vm_map_global("OPAL boot stacks", stack_start, stack_end - stack_start, true, false);
+
+	if (!fast_reboot) {
+		vm_map_global_text("OPAL text", (unsigned long)_stext,
+				   (unsigned long)_etext - (unsigned long)_stext);
+		vm_map_global("OPAL rodata", (unsigned long)__rodata_start,
+			      (unsigned long)__rodata_end - (unsigned long)__rodata_start,
+			      false, false);
+		vm_map_global("OPAL data", (unsigned long)_sdata,
+			      (unsigned long)_edata - (unsigned long)_sdata,
+			      true, false);
+		vm_map_global("OPAL bss", (unsigned long)_sbss,
+			      (unsigned long)_ebss - (unsigned long)_sbss,
+			      true, false);
+		vm_map_global("OPAL sym map", (unsigned long)__sym_map_start,
+			      (unsigned long)__sym_map_end - (unsigned long)__sym_map_start,
+			      false, false);
+		vm_map_global("OPAL heap", HEAP_BASE, HEAP_SIZE, true, false);
+		vm_map_global("Memory console", INMEM_CON_START, INMEM_CON_LEN, true, false);
+		vm_map_global("Hostboot console", HBRT_CON_START, HBRT_CON_LEN, false, false);
+		vm_map_global("SPIRA heap", SPIRA_HEAP_BASE, SPIRA_HEAP_SIZE, false, false);
+		vm_map_global("PSI TCE table", PSI_TCE_TABLE_BASE, PSI_TCE_TABLE_SIZE_P8, false, false);
+		vm_map_global("OPAL boot stacks", stack_start, stack_end - stack_start, true, false);
+	}
 	vm_globals_allocated = true;
 
 done:

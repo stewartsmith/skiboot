@@ -356,7 +356,7 @@ void vm_map_global_text(const char *name, unsigned long addr, unsigned long len)
 void vm_unmap_global(unsigned long addr, unsigned long len);
 void *vm_map(unsigned long addr, unsigned long len, bool rw);
 void vm_unmap(unsigned long addr, unsigned long len);
-void vm_init(void);
+void vm_init(bool fast_reboot);
 void vm_init_stacks(void);
 void vm_destroy(void);
 void vm_init_secondary(void);

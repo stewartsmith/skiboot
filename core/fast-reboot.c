@@ -387,7 +387,7 @@ void __noreturn fast_reboot_entry(void)
 	mtmsrd(MSR_RI, 1);
 
 	/* Enter virtual memory mode */
-	vm_init();
+	vm_init(true);
 
 	prlog(PR_INFO, "RESET: Releasing secondaries...\n");
 
