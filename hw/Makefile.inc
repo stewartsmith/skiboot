@@ -12,8 +12,7 @@ HW_OBJS += vas.o sbe-p8.o dio-p9.o
 HW_OBJS += lpc-port80h.o
 HW=hw/built-in.a
 
-include $(SRC)/hw/fsp/Makefile.inc
 include $(SRC)/hw/ast-bmc/Makefile.inc
 include $(SRC)/hw/ipmi/Makefile.inc
 
-$(HW): $(HW_OBJS:%=hw/%) $(FSP) $(EC) $(AST_BMC) $(IPMI)
+$(HW): $(HW_OBJS:%=hw/%) $(EC) $(AST_BMC) $(IPMI)
