@@ -43,7 +43,7 @@ struct cpu_stack {
 	};
 } __align(STACK_SIZE);
 
-static struct cpu_stack * const cpu_stacks = (struct cpu_stack *)CPU_STACKS_BASE;
+extern struct cpu_stack * const cpu_stacks;
 unsigned int cpu_thread_count;
 unsigned int cpu_max_pir;
 struct cpu_thread *boot_cpu;

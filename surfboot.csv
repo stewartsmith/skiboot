@@ -1,0 +1,5 @@
+@0,0x0,
+HBB,0x1000,0x200000,LR,,/home/stewart/skiboot/surfboot.lid
+BOOTKERNEL,0x201000,0x400000,LR,,BOOTKERNEL.stb
+SURFROOT,0x601000,0x1000000,LR,,/home/stewart/op-build/output/images/rootfs.squashfs
+NVRAM,0x1701000,0x20000,F,,/dev/zero

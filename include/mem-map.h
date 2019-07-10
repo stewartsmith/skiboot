@@ -26,7 +26,7 @@
 /* Stack size set to 32K, 16K for general stack and 16K for an emergency
  * stack.
  */
-#define STACK_SHIFT		15
+#define STACK_SHIFT		14 // FIXME: 15 originally, hack for surfboot
 #define STACK_SIZE		(1 << STACK_SHIFT)
 
 /* End of the exception region we copy from 0x0. 0x0-0x100 will have

@@ -19,8 +19,8 @@
  */
 
 #include <inttypes.h>
+#include <surfboot-mem-map.h>
 #include <skiboot.h>
-#include <mem-map.h>
 #include <libfdt_env.h>
 #include <lock.h>
 #include <device.h>
@@ -30,19 +30,19 @@
 #include <types.h>
 #include <mem_region.h>
 
-unsigned long top_of_ram = SKIBOOT_BASE + SKIBOOT_SIZE;
+unsigned long top_of_ram = SURFBOOT_BASE + SURFBOOT_SIZE;
 int device_tree_max_size = DEVICE_TREE_MAX_SIZE;
 struct cpu_stack * const cpu_stacks = (struct cpu_stack *)CPU_STACKS_BASE;
 void* kernel_load_base = KERNEL_LOAD_BASE;
 const uint64_t kernel_load_size = KERNEL_LOAD_SIZE;
 void* initramfs_load_base = INITRAMFS_LOAD_BASE;
 const uint64_t initramfs_load_size = INITRAMFS_LOAD_SIZE;
-uint64_t skiboot_base = SKIBOOT_BASE;
+uint64_t skiboot_base = SURFBOOT_BASE;
 
 struct mem_region skiboot_os_reserve = {
 	.name		= "ibm,os-reserve",
 	.start		= 0,
-	.len		= SKIBOOT_BASE,
+	.len		= SURFBOOT_BASE,
 	.type		= REGION_OS,
 };
 
@@ -55,15 +55,15 @@ struct mem_region skiboot_heap = {
 
 struct mem_region skiboot_code_and_text = {
 	.name		= "ibm,firmware-code",
-	.start		= SKIBOOT_BASE,
-	.len		= HEAP_BASE - SKIBOOT_BASE,
+	.start		= SURFBOOT_BASE,
+	.len		= HEAP_BASE - SURFBOOT_BASE,
 	.type		= REGION_SKIBOOT_FIRMWARE,
 };
 
 struct mem_region skiboot_after_heap = {
 	.name		= "ibm,firmware-data",
 	.start		= HEAP_BASE + HEAP_SIZE,
-	.len		= SKIBOOT_BASE + SKIBOOT_SIZE - (HEAP_BASE + HEAP_SIZE),
+	.len		= SURFBOOT_BASE + SURFBOOT_SIZE - (HEAP_BASE + HEAP_SIZE),
 	.type		= REGION_SKIBOOT_FIRMWARE,
 };
 
@@ -76,15 +76,15 @@ struct mem_region skiboot_cpu_stacks = {
 
 struct mem_region skiboot_mambo_kernel = {
 	.name		= "ibm,firmware-mambo-kernel",
-	.start		= (unsigned long)KERNEL_LOAD_BASE,
-	.len		= KERNEL_LOAD_SIZE,
+	.start		= (unsigned long)0,
+	.len		= 0,
 	.type		= REGION_SKIBOOT_FIRMWARE,
 };
 
 struct mem_region skiboot_mambo_initramfs = {
 	.name		= "ibm,firmware-mambo-initramfs",
-	.start		= (unsigned long)INITRAMFS_LOAD_BASE,
-	.len		= INITRAMFS_LOAD_SIZE,
+	.start		= (unsigned long)0,
+	.len		= 0,
 	.type		= REGION_SKIBOOT_FIRMWARE,
 };
 

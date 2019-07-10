@@ -53,6 +53,7 @@ static uint64_t opal_dynamic_events;
 extern uint32_t attn_trigger;
 extern uint32_t hir_trigger;
 
+extern uint64_t skiboot_base;
 
 void opal_table_init(void)
 {
@@ -395,7 +396,7 @@ void add_opal_node(void)
 	 */
 
 	entry = (uint64_t)&opal_entry;
-	base = SKIBOOT_BASE;
+	base = skiboot_base;
 	size = (CPU_STACKS_BASE +
 		(uint64_t)(cpu_max_pir + 1) * STACK_SIZE) - SKIBOOT_BASE;
 

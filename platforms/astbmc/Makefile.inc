@@ -11,3 +11,7 @@ ASTBMC_OBJS = pnor.o common.o slots.o \
 ASTBMC = $(PLATDIR)/astbmc/built-in.a
 $(ASTBMC): $(ASTBMC_OBJS:%=$(PLATDIR)/astbmc/%)
 
+ASTBMC_SURFBOOT_OBJS = pnor.o common.o surfboot.o
+ASTBMC_SURFBOOT = $(PLATDIR)/astbmc/surfboot-built-in.a
+
+$(ASTBMC_SURFBOOT): $(ASTBMC_SURFBOOT_OBJS:%=$(PLATDIR)/astbmc/%)

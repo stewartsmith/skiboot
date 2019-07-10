@@ -36,6 +36,8 @@ static int fdt_error;
 #define FDT_DBG(fmt, a...)
 #endif
 
+extern int device_tree_max_size;
+
 static void __save_err(int err, const char *str)
 {
 	FDT_DBG("rc: %d from \"%s\"\n", err, str);
@@ -198,7 +200,7 @@ err:
 void *create_dtb(const struct dt_node *root, bool exclusive)
 {
 	void *fdt = NULL;
-	size_t len = DEVICE_TREE_MAX_SIZE;
+	size_t len = device_tree_max_size;
 	uint32_t old_last_phandle = get_last_phandle();
 	int ret;
 

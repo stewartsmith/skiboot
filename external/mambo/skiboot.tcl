@@ -43,11 +43,6 @@ mconfig boot_load MAMBO_BOOT_LOAD 0x30000000
 # Boot: Value of PC after loading, for binary or vmlinux
 mconfig boot_pc	MAMBO_BOOT_PC 0x30000010
 
-# Payload: Allow for a Linux style ramdisk/initrd
-if { ![info exists env(SKIBOOT_ZIMAGE)] } {
-	error "Please set SKIBOOT_ZIMAGE to the path of your zImage.epapr"
-}
-mconfig payload PAYLOAD $env(SKIBOOT_ZIMAGE)
 
 mconfig linux_cmdline LINUX_CMDLINE ""
 
@@ -68,6 +63,15 @@ mconfig rootdisk_cow_method MAMBO_ROOTDISK_COW_METHOD newcow
 
 # Disk: COW hash size
 mconfig rootdisk_cow_hash MAMBO_ROOTDISK_COW_HASH 1024
+
+# Payload: Allow for a Linux style ramdisk/initrd
+if { ![info exists env(SKIBOOT_ZIMAGE)] } {
+    if { $mconf(rootdisk) == "none" } {
+	error "Please set SKIBOOT_ZIMAGE to the path of your zImage.epapr, or set ROOTDISK to a pnor"
+    }
+} else {
+    mconfig payload PAYLOAD $env(SKIBOOT_ZIMAGE)
+}
 
 # Net: What type of networking: none, phea, bogus
 mconfig net MAMBO_NET none
@@ -235,8 +239,16 @@ set compat [of::encode_compat $compat]
 mysim of addprop $xscom_node byte_array "compatible" $compat
 
 set chosen_node [mysim of find_device /chosen]
-set base_addr [list $mconf(payload_addr)]
-mysim of addprop $chosen_node array64 "kernel-base-address" base_addr
+if { [info exists env(SKIBOOT_ZIMAGE)] } {
+    set base_addr [list $mconf(payload_addr)]
+    mysim of addprop $chosen_node array64 "kernel-base-address" base_addr
+}
+
+# Add device tree entry for NVRAM
+set reserved_memory [mysim of addchild $root_node "reserved-memory" ""]
+mysim of addprop $reserved_memory int "#size-cells" 2
+mysim of addprop $reserved_memory int "#address-cells" 2
+mysim of addprop $reserved_memory empty "ranges" ""
 
 # Load any initramfs
 set cpio_start 0x80000000
@@ -255,6 +267,10 @@ if { [info exists env(SKIBOOT_INITRD)] } {
 
     mysim of addprop $chosen_node int "linux,initrd-start" $cpio_start
     mysim of addprop $chosen_node int "linux,initrd-end"   $cpio_end
+set initramfs_res [mysim of addchild $reserved_memory "initramfs" ""]
+set reg [list $cpio_start $cpio_size ]
+mysim of addprop $initramfs_res array64 "reg" reg
+mysim of addprop $initramfs_res empty "name" "initramfs"
 }
 
 
@@ -306,28 +322,17 @@ if { [info exists env(SKIBOOT_NVRAM)] } {
     set fake_nvram_file $env(SKIBOOT_NVRAM)
     set fake_nvram_size [file size $fake_nvram_file]
     mysim mcm 0 memory fread $fake_nvram_start $fake_nvram_size $fake_nvram_file
-}
-
-# Add device tree entry for NVRAM
-set reserved_memory [mysim of addchild $root_node "reserved-memory" ""]
-mysim of addprop $reserved_memory int "#size-cells" 2
-mysim of addprop $reserved_memory int "#address-cells" 2
-mysim of addprop $reserved_memory empty "ranges" ""
-
-set initramfs_res [mysim of addchild $reserved_memory "initramfs" ""]
-set reg [list $cpio_start $cpio_size ]
-mysim of addprop $initramfs_res array64 "reg" reg
-mysim of addprop $initramfs_res empty "name" "initramfs"
-
 set fake_nvram_node [mysim of addchild $reserved_memory "ibm,fake-nvram" ""]
 set reg [list $fake_nvram_start $fake_nvram_size ]
 mysim of addprop $fake_nvram_node array64 "reg" reg
 mysim of addprop $fake_nvram_node empty "name" "ibm,fake-nvram"
+}
+
 
 set opal_node [mysim of addchild $root_node "ibm,opal" ""]
 
 # Allow P9 to use all idle states
-if { $default_config == "P9" } {
+if { $default_config == "P9"  && ![info exists env(SKIBOOT_DISABLE_STOP)] } {
     set power_mgt_node [mysim of addchild $opal_node "power-mgt" ""]
     mysim of addprop $power_mgt_node int "ibm,enabled-stop-levels" 0xffffffff
 }
@@ -583,11 +588,16 @@ of::set_bootargs $mconf(linux_cmdline)
 set boot_size [file size $mconf(boot_image)]
 mysim memory fread $mconf(boot_load) $boot_size $mconf(boot_image)
 
-set payload_size [file size $mconf(payload)]
-mysim memory fread $mconf(payload_addr) $payload_size $mconf(payload)
+if { [info exists env(SKIBOOT_ZIMAGE)] } {
+    set payload_size [file size $mconf(payload)]
+    mysim memory fread $mconf(payload_addr) $payload_size $mconf(payload)
 
-if { $payload_size > [expr $mconf(boot_load) - $mconf(payload_addr)] } {
-	error "vmlinux is too large, consider adjusting PAYLOAD_ADDR"
+    # assume you know what you're doing otherwise.
+    if { $mconf(boot_load) > $mconf(payload_addr) } {
+	if { $payload_size > [expr $mconf(boot_load) - $mconf(payload_addr)] } {
+	    error "vmlinux is too large, consider adjusting PAYLOAD_ADDR"
+	}
+    }
 }
 
 # Flatten it

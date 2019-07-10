@@ -216,6 +216,7 @@ include/asm-offsets.h: asm/asm-offsets.s
 
 TARGET = skiboot
 TARGET_NOFSP = skiboot-nofsp
+TARGET_SURFBOOT = surfboot
 
 include $(SRC)/asm/Makefile.inc
 include $(SRC)/core/Makefile.inc
@@ -251,11 +252,14 @@ pflash-coverity:
 all: $(SUBDIRS) $(TARGET).lid $(TARGET).lid.xz $(TARGET).map extract-gcov
 all: $(TARGET).lid.stb $(TARGET).lid.xz.stb
 all: $(TARGET_NOFSP).lid $(TARGET_NOFSP).lid.xz $(TARGET_NOFSP).map $(TARGET_NOFSP).lid.xz.stb
+all: $(TARGET_SURFBOOT).lid $(TARGET_SURFBOOT).lid.stb $(TARGET_SURFBOOT).map
 
-BASE_OBJS := $(ASM) $(CORE) $(HW) $(LIBFDT) $(LIBXZ) $(LIBFLASH) $(LIBSTB)
-BASE_OBJS += $(LIBC) $(CCAN) $(DEVSRC_OBJ) $(LIBPORE)
-OBJS += $(BASE_OBJS) $(PLATFORMS)
-NO_FSP_OBJS += $(BASE_OBJS) $(NO_FSP_PLATFORMS)
+BASE_OBJS := $(LIBFDT) $(LIBXZ) $(LIBFLASH) $(LIBSTB)
+BASE_OBJS += $(LIBC) $(CCAN)
+SKIBOOT_OBJS:= $(ASM) $(DEVSRC_OBJ) $(BASE_OBJS) $(SKIBOOT_CORE) $(SKIBOOT_HW) $(LIBPORE)
+OBJS += $(SKIBOOT_OBJS) $(PLATFORMS)
+NO_FSP_OBJS += $(SKIBOOT_OBJS) $(NO_FSP_PLATFORMS)
+SURFBOOT_OBJS := $(SURFBOOT_ASM) $(SURFBOOT_CORE) $(BASE_OBJS) $(SURFBOOT_HW) $(SURFBOOT_PLATFORMS)
 
 OBJS_NO_VER = $(OBJS)
 ALL_OBJS = $(OBJS) version.o
@@ -263,6 +267,10 @@ ALL_OBJS = $(OBJS) version.o
 NO_FSP_ALL_OBJS = $(NO_FSP_OBJS) version.o
 NO_FSP_ALL_OBJS_1 = $(TARGET_NOFSP).tmp.a asm/dummy_map.o
 NO_FSP_ALL_OBJS_2 = $(TARGET_NOFSP).tmp.a asm/real_map-nofsp.o
+
+SURFBOOT_ALL_OBJS = $(SURFBOOT_OBJS) version.o
+SURFBOOT_ALL_OBJS_1 = $(TARGET_SURFBOOT).tmp.a asm/dummy_map.o
+SURFBOOT_ALL_OBJS_2 = $(TARGET_SURFBOOT).tmp.a asm/real_map-surfboot.o
 
 ALL_OBJS_1 = $(TARGET).tmp.a asm/dummy_map.o
 ALL_OBJS_2 = $(TARGET).tmp.a asm/real_map.o
@@ -285,6 +293,9 @@ $(TARGET_NOFSP).lid.stb: $(TARGET_NOFSP).lid libstb/create-container
 $(TARGET_NOFSP).lid.xz.stb: $(TARGET_NOFSP).lid.xz libstb/create-container
 	$(call Q,STB-DEVELOPMENT-SIGNED-CONTAINER,$(SRC)/libstb/sign-with-local-keys.sh $< $@ $(SRC)/libstb/keys/ PAYLOAD,$@)
 
+$(TARGET_SURFBOOT).lid.stb: $(TARGET_SURFBOOT).lid libstb/create-container
+	$(call Q,STB-DEVELOPMENT-SIGNED-CONTAINER,$(SRC)/libstb/sign-with-local-keys.sh $< $@ $(SRC)/libstb/keys/ HBB,$@)
+
 $(TARGET).tmp.a: $(ALL_OBJS)
 	@rm -f $(TARGET).tmp.a
 	$(call Q,AR, $(AR) rcsTPD $@ $(ALL_OBJS), $@)
@@ -293,21 +304,33 @@ $(TARGET_NOFSP).tmp.a: $(NO_FSP_ALL_OBJS)
 	@rm -f $(TARGET_NOFSP).tmp.a
 	$(call Q,AR, $(AR) rcsTPD $@ $(NO_FSP_ALL_OBJS), $@)
 
+$(TARGET_SURFBOOT).tmp.a: $(SURFBOOT_ALL_OBJS)
+	@rm -f $(TARGET_SURFBOOT).tmp.a
+	$(call Q,AR, $(AR) rcsTPD $@ $(SURFBOOT_ALL_OBJS), $@)
+
 $(TARGET).tmp.elf: $(ALL_OBJS_1) $(TARGET).lds $(KERNEL)
 	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(ALL_OBJS_1), $@)
 
 $(TARGET_NOFSP).tmp.elf: $(NO_FSP_ALL_OBJS_1) $(TARGET).lds $(KERNEL)
 	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(NO_FSP_ALL_OBJS_1), $@)
 
+$(TARGET_SURFBOOT).tmp.elf: $(SURFBOOT_ALL_OBJS_1) $(TARGET_SURFBOOT).lds $(KERNEL)
+	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET_SURFBOOT).lds $(SURFBOOT_ALL_OBJS_1), $@)
+
 asm/real_map.o : $(TARGET).tmp.map
 
 asm/real_map-nofsp.o : $(TARGET_NOFSP).tmp.map
+
+asm/real_map-surfboot.o : $(TARGET_SURFBOOT).tmp.map
 
 $(TARGET).elf: $(ALL_OBJS_2) $(TARGET).lds $(KERNEL)
 	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(ALL_OBJS_2), $@)
 
 $(TARGET_NOFSP).elf: $(NO_FSP_ALL_OBJS_2) $(TARGET).lds $(KERNEL)
 	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(NO_FSP_ALL_OBJS_2), $@)
+
+$(TARGET_SURFBOOT).elf: $(SURFBOOT_ALL_OBJS_2) $(TARGET_SURFBOOT).lds $(KERNEL)
+	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET_SURFBOOT).lds $(SURFBOOT_ALL_OBJS_2), $@)
 
 
 $(SUBDIRS):

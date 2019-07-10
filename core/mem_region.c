@@ -746,6 +746,9 @@ static bool add_region(struct mem_region *region)
 		return false;
 	}
 
+	if (region->len == 0)
+		return true;
+
 	/* First split any regions which intersect. */
 	list_for_each(&regions, r, list) {
 		/*
@@ -1077,7 +1080,7 @@ void mem_region_init(void)
 	 * This is called after we know the maximum PIR of all CPUs,
 	 * so we can dynamically set the stack length.
 	 */
-	skiboot_cpu_stacks.len = (cpu_max_pir + 1) * STACK_SIZE;
+	skiboot_cpu_stacks.len = ALIGN_UP((cpu_max_pir + 1) * STACK_SIZE, 4096);
 
 	lock(&mem_region_lock);
 

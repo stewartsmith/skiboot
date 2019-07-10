@@ -58,6 +58,10 @@ enum proc_gen proc_gen;
 unsigned int pcie_max_link_speed;
 bool verbose_eeh;
 
+extern void* kernel_load_base;
+extern const uint64_t kernel_load_size;
+extern void* initramfs_load_base;
+extern const uint64_t initramfs_load_size;
 static uint64_t kernel_entry;
 static size_t kernel_size;
 static bool kernel_32bit;
@@ -320,10 +324,10 @@ bool start_preload_kernel(void)
 	int loaded;
 
 	/* Try to load an external kernel payload through the platform hooks */
-	kernel_size = KERNEL_LOAD_SIZE;
+	kernel_size = kernel_load_size;
 	loaded = start_preload_resource(RESOURCE_ID_KERNEL,
 					RESOURCE_SUBID_NONE,
-					KERNEL_LOAD_BASE,
+					kernel_load_base,
 					&kernel_size);
 	if (loaded != OPAL_SUCCESS) {
 		printf("INIT: platform start load kernel failed\n");
@@ -331,10 +335,10 @@ bool start_preload_kernel(void)
 		return false;
 	}
 
-	initramfs_size = INITRAMFS_LOAD_SIZE;
+	initramfs_size = initramfs_load_size;
 	loaded = start_preload_resource(RESOURCE_ID_INITRAMFS,
 					RESOURCE_SUBID_NONE,
-					INITRAMFS_LOAD_BASE, &initramfs_size);
+					initramfs_load_base, &initramfs_size);
 	if (loaded != OPAL_SUCCESS) {
 		printf("INIT: platform start load initramfs failed\n");
 		initramfs_size = 0;
@@ -369,7 +373,7 @@ static bool load_kernel(void)
 				((uint64_t)__builtin_kernel_start) -
 				SKIBOOT_BASE + boot_offset;
 			printf("Using built-in kernel\n");
-			memmove(KERNEL_LOAD_BASE, (void*)builtin_base,
+			memmove(kernel_load_base, (void*)builtin_base,
 				kernel_size);
 		}
 	}
@@ -385,7 +389,7 @@ static bool load_kernel(void)
 		 */
 		if (kernel_entry < EXCEPTION_VECTORS_END) {
 			cpu_set_sreset_enable(false);
-			memcpy_null(NULL, old_vectors, EXCEPTION_VECTORS_END);
+			//memcpy_null(NULL, old_vectors, EXCEPTION_VECTORS_END);
 			sync_icache();
 		} else {
 			/* Hack for STB in Mambo, assume at least 4kb in mem */
@@ -400,16 +404,16 @@ static bool load_kernel(void)
 	} else {
 		if (!kernel_size) {
 			printf("INIT: Assuming kernel at %p\n",
-			       KERNEL_LOAD_BASE);
+			       kernel_load_base);
 			/* Hack for STB in Mambo, assume at least 4kb in mem */
 			kernel_size = SECURE_BOOT_HEADERS_SIZE;
-			kernel_entry = (uint64_t)KERNEL_LOAD_BASE;
+			kernel_entry = (uint64_t)kernel_load_base;
 		}
-		if (stb_is_container(KERNEL_LOAD_BASE, kernel_size)) {
-			stb_container = KERNEL_LOAD_BASE;
-			kh = (struct elf_hdr *) (KERNEL_LOAD_BASE + SECURE_BOOT_HEADERS_SIZE);
+		if (stb_is_container(kernel_load_base, kernel_size)) {
+			stb_container = kernel_load_base;
+			kh = (struct elf_hdr *) (kernel_load_base + SECURE_BOOT_HEADERS_SIZE);
 		} else
-			kh = (struct elf_hdr *) (KERNEL_LOAD_BASE);
+			kh = (struct elf_hdr *) (kernel_load_base);
 
 	}
 
@@ -457,11 +461,11 @@ static void load_initramfs(void)
 	if (loaded != OPAL_SUCCESS || !initramfs_size)
 		return;
 
-	if (stb_is_container(INITRAMFS_LOAD_BASE, initramfs_size)) {
-		stb_container = INITRAMFS_LOAD_BASE;
-		initramfs_start = INITRAMFS_LOAD_BASE + SECURE_BOOT_HEADERS_SIZE;
+	if (stb_is_container(initramfs_load_base, initramfs_size)) {
+		stb_container = initramfs_load_base;
+		initramfs_start = initramfs_load_base + SECURE_BOOT_HEADERS_SIZE;
 	} else {
-		initramfs_start = INITRAMFS_LOAD_BASE;
+		initramfs_start = initramfs_load_base;
 	}
 
 	dt_check_del_prop(dt_chosen, "linux,initrd-start");
@@ -621,7 +625,9 @@ void __noreturn load_and_boot_kernel(bool is_reboot)
 
 	if (kernel_32bit)
 		start_kernel32(kernel_entry, fdt, mem_top);
-	start_kernel(kernel_entry, fdt, mem_top);
+	memcpy_null(0x00, kernel_load_base, kernel_load_size);
+	memset(kernel_load_base, 0, kernel_load_size);
+	start_kernel(kernel_entry - (uint64_t)kernel_load_base, fdt, mem_top);
 }
 
 static void dt_fixups(void)
@@ -752,7 +758,7 @@ static void __nomcount do_ctors(void)
 		(*call)();
 }
 
-#ifndef PPC64_ELF_ABI_v2
+#ifdef foo //#ifndef PPC64_ELF_ABI_v2
 static void branch_null(void)
 {
 	assert_fail("Branch to NULL !");
@@ -931,7 +937,7 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 	 * Before first printk, ensure console buffer is clear or
 	 * reading tools might think it has wrapped
 	 */
-	clear_console();
+//	clear_console();
 
 	/*
 	 * Some boot firmwares enter OPAL with MSR[ME]=1, as they presumably
@@ -943,7 +949,7 @@ void __noreturn __nomcount main_cpu_entry(const void *fdt)
 	disable_machine_check();
 
 	/* Copy all vectors down to 0 */
-	copy_exception_vectors();
+//	copy_exception_vectors();
 
 	/*
 	 * Enable MSR[ME] bit so we can take MCEs. We don't currently

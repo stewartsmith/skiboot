@@ -27,7 +27,7 @@
 #include <processor.h>
 #include <cpu.h>
 
-static char *con_buf = (char *)INMEM_CON_START;
+extern char *con_buf;
 static size_t con_in;
 static size_t con_out;
 static bool con_wrapped;
@@ -39,15 +39,6 @@ static struct con_ops *con_driver;
 static struct opal_con_ops *opal_con_driver = &dummy_opal_con;
 
 static struct lock con_lock = LOCK_UNLOCKED;
-
-/* This is mapped via TCEs so we keep it alone in a page */
-struct memcons memcons __section(".data.memcons") = {
-	.magic		= MEMCONS_MAGIC,
-	.obuf_phys	= INMEM_CON_START,
-	.ibuf_phys	= INMEM_CON_START + INMEM_CON_OUT_LEN,
-	.obuf_size	= INMEM_CON_OUT_LEN,
-	.ibuf_size	= INMEM_CON_IN_LEN,
-};
 
 static bool dummy_console_enabled(void)
 {
