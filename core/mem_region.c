@@ -57,56 +57,20 @@ static struct list_head early_reserves = LIST_HEAD_INIT(early_reserves);
 static bool mem_region_init_done = false;
 static bool mem_regions_finalised = false;
 
-unsigned long top_of_ram = SKIBOOT_BASE + SKIBOOT_SIZE;
+extern unsigned long top_of_ram;
 
-static struct mem_region skiboot_os_reserve = {
-	.name		= "ibm,os-reserve",
-	.start		= 0,
-	.len		= SKIBOOT_BASE,
-	.type		= REGION_OS,
-};
+/*
+ * Actual location of regions varies based on target
+ * i.e. surfboot layout is different than skiboot
+ */
 
-struct mem_region skiboot_heap = {
-	.name		= "ibm,firmware-heap",
-	.start		= HEAP_BASE,
-	.len		= HEAP_SIZE,
-	.type		= REGION_SKIBOOT_HEAP,
-};
-
-static struct mem_region skiboot_code_and_text = {
-	.name		= "ibm,firmware-code",
-	.start		= SKIBOOT_BASE,
-	.len		= HEAP_BASE - SKIBOOT_BASE,
-	.type		= REGION_SKIBOOT_FIRMWARE,
-};
-
-static struct mem_region skiboot_after_heap = {
-	.name		= "ibm,firmware-data",
-	.start		= HEAP_BASE + HEAP_SIZE,
-	.len		= SKIBOOT_BASE + SKIBOOT_SIZE - (HEAP_BASE + HEAP_SIZE),
-	.type		= REGION_SKIBOOT_FIRMWARE,
-};
-
-static struct mem_region skiboot_cpu_stacks = {
-	.name		= "ibm,firmware-stacks",
-	.start		= CPU_STACKS_BASE,
-	.len		= 0, /* TBA */
-	.type		= REGION_SKIBOOT_FIRMWARE,
-};
-
-static struct mem_region skiboot_mambo_kernel = {
-	.name		= "ibm,firmware-mambo-kernel",
-	.start		= (unsigned long)KERNEL_LOAD_BASE,
-	.len		= KERNEL_LOAD_SIZE,
-	.type		= REGION_SKIBOOT_FIRMWARE,
-};
-
-static struct mem_region skiboot_mambo_initramfs = {
-	.name		= "ibm,firmware-mambo-initramfs",
-	.start		= (unsigned long)INITRAMFS_LOAD_BASE,
-	.len		= INITRAMFS_LOAD_SIZE,
-	.type		= REGION_SKIBOOT_FIRMWARE,
-};
+extern struct mem_region skiboot_os_reserve;
+extern struct mem_region skiboot_heap;
+extern struct mem_region skiboot_code_and_text;
+extern struct mem_region skiboot_after_heap;
+extern struct mem_region skiboot_cpu_stacks;
+extern struct mem_region skiboot_mambo_kernel;
+extern struct mem_region skiboot_mambo_initramfs;
 
 
 struct alloc_hdr {
