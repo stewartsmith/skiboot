@@ -215,6 +215,7 @@ include/asm-offsets.h: asm/asm-offsets.s
 	$(call Q,GN, $(SRC)/make_offsets.sh $< >$@, $@)
 
 TARGET = skiboot
+TARGET_NOFSP = skiboot-nofsp
 
 include $(SRC)/asm/Makefile.inc
 include $(SRC)/core/Makefile.inc
@@ -249,11 +250,19 @@ pflash-coverity:
 
 all: $(SUBDIRS) $(TARGET).lid $(TARGET).lid.xz $(TARGET).map extract-gcov
 all: $(TARGET).lid.stb $(TARGET).lid.xz.stb
+all: $(TARGET_NOFSP).lid $(TARGET_NOFSP).lid.xz $(TARGET_NOFSP).map $(TARGET_NOFSP).lid.xz.stb
 
-OBJS := $(ASM) $(CORE) $(HW) $(PLATFORMS) $(LIBFDT) $(LIBXZ) $(LIBFLASH) $(LIBSTB)
-OBJS += $(LIBC) $(CCAN) $(DEVSRC_OBJ) $(LIBPORE)
+BASE_OBJS := $(ASM) $(CORE) $(HW) $(LIBFDT) $(LIBXZ) $(LIBFLASH) $(LIBSTB)
+BASE_OBJS += $(LIBC) $(CCAN) $(DEVSRC_OBJ) $(LIBPORE)
+OBJS += $(BASE_OBJS) $(PLATFORMS)
+NO_FSP_OBJS += $(BASE_OBJS) $(NO_FSP_PLATFORMS)
+
 OBJS_NO_VER = $(OBJS)
 ALL_OBJS = $(OBJS) version.o
+
+NO_FSP_ALL_OBJS = $(NO_FSP_OBJS) version.o
+NO_FSP_ALL_OBJS_1 = $(TARGET_NOFSP).tmp.a asm/dummy_map.o
+NO_FSP_ALL_OBJS_2 = $(TARGET_NOFSP).tmp.a asm/real_map-nofsp.o
 
 ALL_OBJS_1 = $(TARGET).tmp.a asm/dummy_map.o
 ALL_OBJS_2 = $(TARGET).tmp.a asm/real_map.o
@@ -270,17 +279,36 @@ $(TARGET).lid.stb: $(TARGET).lid libstb/create-container
 $(TARGET).lid.xz.stb: $(TARGET).lid.xz libstb/create-container
 	$(call Q,STB-DEVELOPMENT-SIGNED-CONTAINER,$(SRC)/libstb/sign-with-local-keys.sh $< $@ $(SRC)/libstb/keys/ PAYLOAD,$@)
 
+$(TARGET_NOFSP).lid.stb: $(TARGET_NOFSP).lid libstb/create-container
+	$(call Q,STB-DEVELOPMENT-SIGNED-CONTAINER,$(SRC)/libstb/sign-with-local-keys.sh $< $@ $(SRC)/libstb/keys/ PAYLOAD,$@)
+
+$(TARGET_NOFSP).lid.xz.stb: $(TARGET_NOFSP).lid.xz libstb/create-container
+	$(call Q,STB-DEVELOPMENT-SIGNED-CONTAINER,$(SRC)/libstb/sign-with-local-keys.sh $< $@ $(SRC)/libstb/keys/ PAYLOAD,$@)
+
 $(TARGET).tmp.a: $(ALL_OBJS)
 	@rm -f $(TARGET).tmp.a
 	$(call Q,AR, $(AR) rcsTPD $@ $(ALL_OBJS), $@)
 
+$(TARGET_NOFSP).tmp.a: $(NO_FSP_ALL_OBJS)
+	@rm -f $(TARGET_NOFSP).tmp.a
+	$(call Q,AR, $(AR) rcsTPD $@ $(NO_FSP_ALL_OBJS), $@)
+
 $(TARGET).tmp.elf: $(ALL_OBJS_1) $(TARGET).lds $(KERNEL)
 	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(ALL_OBJS_1), $@)
 
+$(TARGET_NOFSP).tmp.elf: $(NO_FSP_ALL_OBJS_1) $(TARGET).lds $(KERNEL)
+	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(NO_FSP_ALL_OBJS_1), $@)
+
 asm/real_map.o : $(TARGET).tmp.map
+
+asm/real_map-nofsp.o : $(TARGET_NOFSP).tmp.map
 
 $(TARGET).elf: $(ALL_OBJS_2) $(TARGET).lds $(KERNEL)
 	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(ALL_OBJS_2), $@)
+
+$(TARGET_NOFSP).elf: $(NO_FSP_ALL_OBJS_2) $(TARGET).lds $(KERNEL)
+	$(call Q,LD, $(LD) $(LDFLAGS_FINAL) -o $@ -T $(TARGET).lds $(NO_FSP_ALL_OBJS_2), $@)
+
 
 $(SUBDIRS):
 	$(call Q,MKDIR,mkdir -p $@, $@)
