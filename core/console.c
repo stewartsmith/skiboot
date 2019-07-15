@@ -91,7 +91,8 @@ struct dt_node *add_opal_console_node(int index, const char *type,
 
 void clear_console(void)
 {
-	memset(con_buf, 0, INMEM_CON_LEN);
+	memset((char*)memcons.obuf_phys, 0, memcons.obuf_size);
+	memset((char*)memcons.ibuf_phys, 0, memcons.ibuf_size);
 }
 
 /*
@@ -155,7 +156,7 @@ static bool __flush_console(bool flush_to_drivers, bool need_unlock)
 		more_flush = false;
 
 		if (con_out > con_in) {
-			req = INMEM_CON_OUT_LEN - con_out;
+			req = memcons.obuf_size - con_out;
 			more_flush = true;
 		} else
 			req = con_in - con_out;
@@ -164,7 +165,7 @@ static bool __flush_console(bool flush_to_drivers, bool need_unlock)
 		len = con_driver->write(con_buf + con_out, req);
 		lock(&con_lock);
 
-		con_out = (con_out + len) % INMEM_CON_OUT_LEN;
+		con_out = (con_out + len) % memcons.obuf_size;
 
 		/* write error? */
 		if (len < req)
@@ -193,7 +194,7 @@ static void inmem_write(char c)
 	if (!c)
 		return;
 	con_buf[con_in++] = c;
-	if (con_in >= INMEM_CON_OUT_LEN) {
+	if (con_in >= memcons.obuf_size) {
 		con_in = 0;
 		con_wrapped = true;
 	}
@@ -213,7 +214,7 @@ static void inmem_write(char c)
 
 	/* If head reaches tail, push tail around & drop chars */
 	if (con_in == con_out)
-		con_out = (con_in + 1) % INMEM_CON_OUT_LEN;
+		con_out = (con_in + 1) % memcons.obuf_size;
 }
 
 static size_t inmem_read(char *buf, size_t req)
@@ -224,7 +225,7 @@ static size_t inmem_read(char *buf, size_t req)
 	while (req && memcons.in_prod != memcons.in_cons) {
 		*(buf++) = ibuf[memcons.in_cons];
 		lwsync();
-		memcons.in_cons = (memcons.in_cons + 1) % INMEM_CON_IN_LEN;
+		memcons.in_cons = (memcons.in_cons + 1) % memcons.ibuf_size;
 		req--;
 		read++;
 	}
@@ -387,7 +388,7 @@ static int64_t dummy_console_write_buffer_space(int64_t term_number,
 		return OPAL_PARAMETER;
 
 	if (length)
-		*length = INMEM_CON_OUT_LEN;
+		*length = memcons.obuf_size;
 
 	return OPAL_SUCCESS;
 }
