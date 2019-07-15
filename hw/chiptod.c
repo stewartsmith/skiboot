@@ -199,20 +199,20 @@ static struct chiptod_tod_regs {
 	/* xscom address of TOD register to be restored. */
 	const uint64_t	xscom_addr;
 	/* per chip cached value of TOD control registers to be restored. */
-	struct {
+	struct chiptod_tod_regs_val {
 		uint64_t	data;
 		bool		valid;
-	} val[MAX_CHIPS];
+	} *val;
 } chiptod_tod_regs[] = {
-	{ TOD_ERR_CRMO_PARITY, TOD_MASTER_PATH_CTRL, { } },
-	{ TOD_ERR_PPORT0_CREG_PARITY, TOD_PRI_PORT0_CTRL,  { } },
-	{ TOD_ERR_PPORT1_CREG_PARITY, TOD_PRI_PORT1_CTRL, { } },
-	{ TOD_ERR_SPORT0_CREG_PARITY, TOD_SEC_PORT0_CTRL, { } },
-	{ TOD_ERR_SPORT1_CREG_PARITY, TOD_SEC_PORT1_CTRL, { } },
-	{ TOD_ERR_SPATH_CREG_PARITY, TOD_SLAVE_PATH_CTRL, { } },
-	{ TOD_ERR_IPATH_CREG_PARITY, TOD_INTERNAL_PATH_CTRL, { } },
-	{ TOD_ERR_PSMS_CREG_PARITY, TOD_PSMS_CTRL, { } },
-	{ TOD_ERR_CTCR_PARITY, TOD_CHIP_CTRL, { } },
+	{ TOD_ERR_CRMO_PARITY, TOD_MASTER_PATH_CTRL, NULL },
+	{ TOD_ERR_PPORT0_CREG_PARITY, TOD_PRI_PORT0_CTRL,  NULL },
+	{ TOD_ERR_PPORT1_CREG_PARITY, TOD_PRI_PORT1_CTRL, NULL },
+	{ TOD_ERR_SPORT0_CREG_PARITY, TOD_SEC_PORT0_CTRL, NULL },
+	{ TOD_ERR_SPORT1_CREG_PARITY, TOD_SEC_PORT1_CTRL, NULL },
+	{ TOD_ERR_SPATH_CREG_PARITY, TOD_SLAVE_PATH_CTRL, NULL },
+	{ TOD_ERR_IPATH_CREG_PARITY, TOD_INTERNAL_PATH_CTRL, NULL },
+	{ TOD_ERR_PSMS_CREG_PARITY, TOD_PSMS_CTRL, NULL },
+	{ TOD_ERR_CTCR_PARITY, TOD_CHIP_CTRL, NULL },
 };
 
 /* The base TFMR value is the same for the whole machine
@@ -1737,6 +1737,8 @@ out:
 
 static void chiptod_init_topology_info(void)
 {
+	int i;
+
 	/* Find and update current topology in use. */
 	current_topology = query_current_topology();
 
@@ -1749,6 +1751,10 @@ static void chiptod_init_topology_info(void)
 	chiptod_update_topology(chiptod_topo_secondary);
 
 	/* Cache TOD control registers values. */
+	for (i = 0; i < ARRAY_SIZE(chiptod_tod_regs); i++) {
+		chiptod_tod_regs[i].val = malloc(nr_chips() * sizeof(struct chiptod_tod_regs_val));
+	}
+
 	chiptod_cache_tod_registers();
 	print_topology_info();
 }
