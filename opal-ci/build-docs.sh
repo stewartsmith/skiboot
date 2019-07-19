@@ -13,7 +13,11 @@ git clone --depth=1 -b v1.4.4 https://git.kernel.org/pub/scm/utils/dtc/dtc.git
 (cd dtc; make -j${MAKE_J})
 export PATH=`pwd`/dtc:$PATH
 
+(cd opal-ci; ./build-qemu-powernv.sh)
+export QEMU_BIN=$(pwd)/opal-ci/qemu/ppc64-softmmu/qemu-system-ppc64
+
 make -j${MAKE_J} SKIBOOT_GCOV=1 coverage-report
+make SKIBOOT_GCOV=1 boot-coverage-report
 
 pip install -r doc/requirements.txt
 (cd doc; make html)
