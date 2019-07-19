@@ -1,6 +1,8 @@
 FROM fedora:30
 RUN dnf -y update
 RUN dnf -y install --allowerasing wget curl xterm gcc git xz make diffutils findutils expect valgrind valgrind-devel ccache dtc openssl-devel gcc-powerpc64-linux-gnu
+RUN dnf -y install --allowerasing python3-dnf-plugins-core
+RUN dnf -y builddep qemu
 # for building documentation
 RUN dnf -y install python-pip
 # for GCOV coverage reports (need testing due to https://bugzilla.redhat.com/show_bug.cgi?id=1668843 )
