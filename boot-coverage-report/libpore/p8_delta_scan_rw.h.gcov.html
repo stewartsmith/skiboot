@@ -1,0 +1,544 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - skiboot-boot.info - libpore/p8_delta_scan_rw.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">libpore</a> - p8_delta_scan_rw.h<span style="font-size: 80%;"> (source / <a href="p8_delta_scan_rw.h.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">skiboot-boot.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-07-22 06:09:47</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntryHi">-</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* IBM_PROLOG_BEGIN_TAG                                                   */</a>
+<a name="2"><span class="lineNum">       2 </span>            : /* This is an automatically generated prolog.                             */</a>
+<a name="3"><span class="lineNum">       3 </span>            : /*                                                                        */</a>
+<a name="4"><span class="lineNum">       4 </span>            : /* $Source: src/usr/hwpf/hwp/build_winkle_images/p8_slw_build/p8_delta_scan_rw.h $ */</a>
+<a name="5"><span class="lineNum">       5 </span>            : /*                                                                        */</a>
+<a name="6"><span class="lineNum">       6 </span>            : /* OpenPOWER HostBoot Project                                             */</a>
+<a name="7"><span class="lineNum">       7 </span>            : /*                                                                        */</a>
+<a name="8"><span class="lineNum">       8 </span>            : /* COPYRIGHT International Business Machines Corp. 2012,2014              */</a>
+<a name="9"><span class="lineNum">       9 </span>            : /*                                                                        */</a>
+<a name="10"><span class="lineNum">      10 </span>            : /* Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);        */</a>
+<a name="11"><span class="lineNum">      11 </span>            : /* you may not use this file except in compliance with the License.       */</a>
+<a name="12"><span class="lineNum">      12 </span>            : /* You may obtain a copy of the License at                                */</a>
+<a name="13"><span class="lineNum">      13 </span>            : /*                                                                        */</a>
+<a name="14"><span class="lineNum">      14 </span>            : /*     http://www.apache.org/licenses/LICENSE-2.0                         */</a>
+<a name="15"><span class="lineNum">      15 </span>            : /*                                                                        */</a>
+<a name="16"><span class="lineNum">      16 </span>            : /* Unless required by applicable law or agreed to in writing, software    */</a>
+<a name="17"><span class="lineNum">      17 </span>            : /* distributed under the License is distributed on an &quot;AS IS&quot; BASIS,      */</a>
+<a name="18"><span class="lineNum">      18 </span>            : /* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or        */</a>
+<a name="19"><span class="lineNum">      19 </span>            : /* implied. See the License for the specific language governing           */</a>
+<a name="20"><span class="lineNum">      20 </span>            : /* permissions and limitations under the License.                         */</a>
+<a name="21"><span class="lineNum">      21 </span>            : /*                                                                        */</a>
+<a name="22"><span class="lineNum">      22 </span>            : /* IBM_PROLOG_END_TAG                                                     */</a>
+<a name="23"><span class="lineNum">      23 </span>            : // $Id: p8_delta_scan_rw.h,v 1.49 2014/05/13 13:31:51 jmcgill Exp $</a>
+<a name="24"><span class="lineNum">      24 </span>            : #define OVERRIDE_OFFSET 8            // Byte offset of forward pointer's addr relative </a>
+<a name="25"><span class="lineNum">      25 </span>            :                                      //   to base forward pointer's addr.</a>
+<a name="26"><span class="lineNum">      26 </span>            : #define SIZE_IMAGE_BUF_MAX      5000000 // Max ~5MB image buffer size.</a>
+<a name="27"><span class="lineNum">      27 </span>            : #define SIZE_IMAGE_CENTAUR_MAX  5000000 // Max ~5MB image buffer size.</a>
+<a name="28"><span class="lineNum">      28 </span>            : #define SIZE_REPR_RING_MAX        50000 // Max ~50kB repr ring buffer size.</a>
+<a name="29"><span class="lineNum">      29 </span>            : #define SCOM_REG_MASK   0x00ffffff   // Scom register mask (within a chiplet)</a>
+<a name="30"><span class="lineNum">      30 </span>            : #define CID_MASK        0xff000000   // Chiplet ID mask</a>
+<a name="31"><span class="lineNum">      31 </span>            : #define CID_EX_LOW      0x10         // Lowest EX chiplet addr</a>
+<a name="32"><span class="lineNum">      32 </span>            : #define CID_EX_HIGH     0x1f         // Highest EX chiplet addr</a>
+<a name="33"><span class="lineNum">      33 </span>            : </a>
+<a name="34"><span class="lineNum">      34 </span>            : /*****  Xip customize support ****/</a>
+<a name="35"><span class="lineNum">      35 </span>            : #define COMBINED_GOOD_VECTORS_TOC_NAME    &quot;combined_good_vectors&quot;</a>
+<a name="36"><span class="lineNum">      36 </span>            : #define L2_SINGLE_MEMBER_ENABLE_TOC_NAME  &quot;l2_single_member_enable_mask&quot;</a>
+<a name="37"><span class="lineNum">      37 </span>            : #define PROC_PIB_REPR_VECTOR_TOC_NAME     &quot;proc_sbe_pibmem_repair_vector&quot;</a>
+<a name="38"><span class="lineNum">      38 </span>            : #define NEST_SKEWADJUST_VECTOR_TOC_NAME   &quot;proc_sbe_nest_skewadjust_vector&quot;</a>
+<a name="39"><span class="lineNum">      39 </span>            : #define SECURITY_SETUP_VECTOR_TOC_NAME    &quot;proc_sbe_security_setup_vector&quot;</a>
+<a name="40"><span class="lineNum">      40 </span>            : #define VALID_BOOT_CORES_MASK_TOC_NAME    &quot;valid_boot_cores_mask&quot;</a>
+<a name="41"><span class="lineNum">      41 </span>            : #define MAX_PLL_RING_SIZE                  128 // Bytes</a>
+<a name="42"><span class="lineNum">      42 </span>            : #define PERV_BNDY_PLL_RING_TOC_NAME       &quot;perv_bndy_pll_ring&quot;</a>
+<a name="43"><span class="lineNum">      43 </span>            : #define PERV_BNDY_PLL_RING_ALT_TOC_NAME   &quot;perv_bndy_pll_ring_alt&quot;</a>
+<a name="44"><span class="lineNum">      44 </span>            : #define MAX_FUNC_L3_RING_LIST_ENTRIES     64  </a>
+<a name="45"><span class="lineNum">      45 </span>            : #define MAX_FUNC_L3_RING_SIZE             7000 // Bytes</a>
+<a name="46"><span class="lineNum">      46 </span>            : #define FUNC_L3_RING_TOC_NAME             &quot;ex_func_l3_ring&quot;</a>
+<a name="47"><span class="lineNum">      47 </span>            : #define MAX_CEN_PLL_RING_SIZE               80 // Bytes</a>
+<a name="48"><span class="lineNum">      48 </span>            : #define TP_PLL_BNDY_RING_ALT_TOC_NAME     &quot;tp_pll_bndy_ring_alt&quot;</a>
+<a name="49"><span class="lineNum">      49 </span>            : #define STANDALONE_MBOX0_VALUE_TOC_NAME   &quot;standalone_mbox0_value&quot;</a>
+<a name="50"><span class="lineNum">      50 </span>            : #define STANDALONE_MBOX1_VALUE_TOC_NAME   &quot;standalone_mbox1_value&quot;</a>
+<a name="51"><span class="lineNum">      51 </span>            : #define STANDALONE_MBOX2_VALUE_TOC_NAME   &quot;standalone_mbox2_value&quot;</a>
+<a name="52"><span class="lineNum">      52 </span>            : #define STANDALONE_MBOX3_VALUE_TOC_NAME   &quot;standalone_mbox3_value&quot;</a>
+<a name="53"><span class="lineNum">      53 </span>            : #define UNTRUSTED_BAR_TOC_NAME            &quot;fabric_config&quot;</a>
+<a name="54"><span class="lineNum">      54 </span>            : #define UNTRUSTED_PBA_BAR_TOC_NAME        &quot;fabric_config_pba&quot;</a>
+<a name="55"><span class="lineNum">      55 </span>            : #define REFCLOCK_TERM_TOC_NAME            &quot;refclock_term&quot;</a>
+<a name="56"><span class="lineNum">      56 </span>            : </a>
+<a name="57"><span class="lineNum">      57 </span>            : /*****  Scan setting  *****/</a>
+<a name="58"><span class="lineNum">      58 </span>            : #define OPCG_SCAN_RATIO                     4</a>
+<a name="59"><span class="lineNum">      59 </span>            : #define P8_OPCG_SCAN_RATIO_BITS             (uint64_t(OPCG_SCAN_RATIO-1)&lt;&lt;(63-8))</a>
+<a name="60"><span class="lineNum">      60 </span>            : #define P8_OPCG_GO_BITS                     (uint64_t(0x40000000)&lt;&lt;32)</a>
+<a name="61"><span class="lineNum">      61 </span>            : #define P8_SCAN_POLL_MASK_BIT15             (uint64_t(0x00010000)&lt;&lt;32)</a>
+<a name="62"><span class="lineNum">      62 </span>            : </a>
+<a name="63"><span class="lineNum">      63 </span>            : /*****  Scan Control Regs  *****/</a>
+<a name="64"><span class="lineNum">      64 </span>            : #define P8_PORE_OPCG_CTRL_REG0_0x00030002   0x00030002 // OPCG control reg 0</a>
+<a name="65"><span class="lineNum">      65 </span>            : #define P8_PORE_OPCG_CTRL_REG1_0x00030003   0x00030003 // OPCG control reg 1</a>
+<a name="66"><span class="lineNum">      66 </span>            : #define P8_PORE_OPCG_CTRL_REG2_0x00030004   0x00030004 // OPCG control reg 2</a>
+<a name="67"><span class="lineNum">      67 </span>            : #define P8_PORE_OPCG_START_REG3_0x00030005  0x00030005 // OPCG start reg 3</a>
+<a name="68"><span class="lineNum">      68 </span>            : #define P8_PORE_CLOCK_REGION_0x00030006     0x00030006 // Clock region control</a>
+<a name="69"><span class="lineNum">      69 </span>            : #define P8_PORE_CLOCK_CONTROLLER_REG        0x00030007 // Addr of clock ctrl scom reg</a>
+<a name="70"><span class="lineNum">      70 </span>            : #define P8_PORE_CLOCK_STATUS_0x00030008     0x00030008 // Status of clocks running</a>
+<a name="71"><span class="lineNum">      71 </span>            : #define P8_PORE_SHIFT_REG                   0x00038000 // Addr of scom reg that does scan ring shifting</a>
+<a name="72"><span class="lineNum">      72 </span>            : #define P8_SCAN_CHECK_WORD                  0xA5A55A5A // Header check word</a>
+<a name="73"><span class="lineNum">      73 </span>            : </a>
+<a name="74"><span class="lineNum">      74 </span>            : /*****  Ring state *****/</a>
+<a name="75"><span class="lineNum">      75 </span>            : #define MAX_RING_SIZE 500000   // 500kbits is the max ring size in bits</a>
+<a name="76"><span class="lineNum">      76 </span>            : </a>
+<a name="77"><span class="lineNum">      77 </span>            : /***** Return codes *****/</a>
+<a name="78"><span class="lineNum">      78 </span>            : #define DSLWB_RING_SEARCH_MATCH               0</a>
+<a name="79"><span class="lineNum">      79 </span>            : #define DSLWB_RING_SEARCH_EXHAUST_MATCH      30</a>
+<a name="80"><span class="lineNum">      80 </span>            : #define DSLWB_RING_SEARCH_NO_MATCH           31</a>
+<a name="81"><span class="lineNum">      81 </span>            : #define DSLWB_RING_SEARCH_MESS               32</a>
+<a name="82"><span class="lineNum">      82 </span>            : #define DSLWB_SLWB_SUCCESS                    0</a>
+<a name="83"><span class="lineNum">      83 </span>            : #define DSLWB_SLWB_NO_RING_MATCH             40</a>
+<a name="84"><span class="lineNum">      84 </span>            : #define DSLWB_SLWB_DX_ERROR                  41</a>
+<a name="85"><span class="lineNum">      85 </span>            : #define DSLWB_SLWB_WF_ERROR                  42</a>
+<a name="86"><span class="lineNum">      86 </span>            : #define DSLWB_SLWB_WF_IMAGE_ERROR            43</a>
+<a name="87"><span class="lineNum">      87 </span>            : #define DSLWB_SLWB_IMAGE_ERROR               44</a>
+<a name="88"><span class="lineNum">      88 </span>            : #define DSLWB_SLWB_UNKNOWN_ERROR             45</a>
+<a name="89"><span class="lineNum">      89 </span>            : #define IMGBUILD_SUCCESS                      0  // Successful img build.</a>
+<a name="90"><span class="lineNum">      90 </span>            : #define IMGBUILD_ERR_GENERIC                  1  // Non-specific error code.</a>
+<a name="91"><span class="lineNum">      91 </span>            : #define IMGBUILD_ERR_FILE_ACCESS              2  // Unable to access/open file.</a>
+<a name="92"><span class="lineNum">      92 </span>            : #define IMGBUILD_ERR_CHIPLET_ID_MESS          4  // Chiplet ID mess(mostly for VPD rings).</a>
+<a name="93"><span class="lineNum">      93 </span>            : #define IMGBUILD_NO_RINGS_FOUND               5  // Successful img build but no rings found.</a>
+<a name="94"><span class="lineNum">      94 </span>            : #define IMGBUILD_BAD_ARGS                     6  // Bad function arguments.</a>
+<a name="95"><span class="lineNum">      95 </span>            : #define IMGBUILD_ERR_MEMORY                   7  // Memory allocation error.</a>
+<a name="96"><span class="lineNum">      96 </span>            : #define IMGBUILD_ERR_RING_TOO_LARGE           8  // Ring size exceeds HB/PHYP's buffer.</a>
+<a name="97"><span class="lineNum">      97 </span>            : #define IMGBUILD_ERR_CHECK_CODE               9  // Coding or image data problem.</a>
+<a name="98"><span class="lineNum">      98 </span>            : #define IMGBUILD_INVALID_IMAGE               10  // Invalid image.</a>
+<a name="99"><span class="lineNum">      99 </span>            : #define IMGBUILD_IMAGE_SIZE_MISMATCH         11  // Mismatch between image sizes.</a>
+<a name="100"><span class="lineNum">     100 </span>            : #define IMGBUILD_IMAGE_SIZE_MESS             12  // Messed up image or section sizes.</a>
+<a name="101"><span class="lineNum">     101 </span>            : #define IMGBUILD_RINGTYPE_NOT_ALLOWED        13  // Ringtype not allowed.</a>
+<a name="102"><span class="lineNum">     102 </span>            : #define IMGBUILD_BUFFER_TOO_SMALL            14  // Buffer too small.</a>
+<a name="103"><span class="lineNum">     103 </span>            : #define IMGBUILD_ERR_PORE_INLINE             20  // Pore inline error.</a>
+<a name="104"><span class="lineNum">     104 </span>            : #define IMGBUILD_ERR_PORE_INLINE_ASM         21  // Err assoc w/inline assembler.</a>
+<a name="105"><span class="lineNum">     105 </span>            : #define IMGBUILD_RING_SEARCH_MATCH            0</a>
+<a name="106"><span class="lineNum">     106 </span>            : #define IMGBUILD_RING_SEARCH_EXHAUST_MATCH   30</a>
+<a name="107"><span class="lineNum">     107 </span>            : #define IMGBUILD_RING_SEARCH_NO_MATCH        31</a>
+<a name="108"><span class="lineNum">     108 </span>            : #define IMGBUILD_RING_SEARCH_MESS            32</a>
+<a name="109"><span class="lineNum">     109 </span>            : #define IMGBUILD_ERR_RING_SEARCH             33  // Err assoc w/ring retrieval.</a>
+<a name="110"><span class="lineNum">     110 </span>            : #define IMGBUILD_ERR_DATACARE_RING_MESS      34  // Err assoc w/datacare &amp; vpd ring sizes.</a>
+<a name="111"><span class="lineNum">     111 </span>            : #define IMGBUILD_ERR_WF_CREATE               45  // Err assoc w/create_wiggle_flip_prg.</a>
+<a name="112"><span class="lineNum">     112 </span>            : #define IMGBUILD_ERR_RING_WRITE_TO_IMAGE     46  // Err assoc w/wr_ring_block_to_img.</a>
+<a name="113"><span class="lineNum">     113 </span>            : #define IMGBUILD_ERR_SECTION_SIZING          48  // Err assoc w/section sizing.</a>
+<a name="114"><span class="lineNum">     114 </span>            : #define IMGBUILD_ERR_GET_SECTION             49  // Err assoc w/getting section ID.</a>
+<a name="115"><span class="lineNum">     115 </span>            : #define IMGBUILD_ERR_SECTION_DELETE          50  // Err assoc w/deleting ELF section.</a>
+<a name="116"><span class="lineNum">     116 </span>            : #define IMGBUILD_ERR_APPEND                  51  // Err assoc w/appending to ELF section.</a>
+<a name="117"><span class="lineNum">     117 </span>            : #define IMGBUILD_ERR_INCOMPLETE_IMG_BUILD    52  // The image was built, but with errors.</a>
+<a name="118"><span class="lineNum">     118 </span>            : #define IMGBUILD_ERR_FWD_BACK_PTR_MESS       53  // Forward or backward pointer mess.</a>
+<a name="119"><span class="lineNum">     119 </span>            : #define IMGBUILD_ERR_KEYWORD_NOT_FOUND       54  // Image keyword not found.</a>
+<a name="120"><span class="lineNum">     120 </span>            : #define IMGBUILD_ERR_MISALIGNED_RING_LAYOUT  55  // Ring layout is misaligned.</a>
+<a name="121"><span class="lineNum">     121 </span>            : #define IMGBUILD_ERR_IMAGE_TOO_LARGE         56  // Image too large. Exceeded max size.</a>
+<a name="122"><span class="lineNum">     122 </span>            : #define IMGBUILD_ERR_XIP_MISC                57  // Miscellaneous XIP image error.</a>
+<a name="123"><span class="lineNum">     123 </span>            : #define IMGBUILD_ERR_XIP_UNKNOWN             58  // Unknown XIP image error.</a>
+<a name="124"><span class="lineNum">     124 </span>            : #define IMGBUILD_ERR_RS4_DECOMPRESS          59  // Error during RS4 decompression.</a>
+<a name="125"><span class="lineNum">     125 </span>            : #define IMGBUILD_ERR_RS4_COMPRESS            60  // Error during RS4 compression.</a>
+<a name="126"><span class="lineNum">     126 </span>            : #define IMGBUILD_ERR_RAM_HDRS_NOT_SYNCED     61  // Ram headers not synchronized.</a>
+<a name="127"><span class="lineNum">     127 </span>            : #define IMGBUILD_ERR_RAM_TABLE_FULL          63  // Ram table is full.       </a>
+<a name="128"><span class="lineNum">     128 </span>            : #define IMGBUILD_ERR_RAM_CODE                64  // Code error in Ram API code.</a>
+<a name="129"><span class="lineNum">     129 </span>            : #define IMGBUILD_ERR_RAM_INVALID_PARM        65  // Invalid Ramming parameter.</a>
+<a name="130"><span class="lineNum">     130 </span>            : #define IMGBUILD_WARN_RAM_TABLE_CONTAMINATION 66 // Ram table contamination</a>
+<a name="131"><span class="lineNum">     131 </span>            : #define IMGBUILD_ERR_RAM_TABLE_FAIL          67  // Unsuccessful RAM table build.</a>
+<a name="132"><span class="lineNum">     132 </span>            : #define IMGBUILD_ERR_RAM_TABLE_END_NOT_FOUND 68  // Table entry end bit not found.</a>
+<a name="133"><span class="lineNum">     133 </span>            : #define IMGBUILD_ERR_SCOM_INVALID_PARM       70  // Invalid Scomming parameter.</a>
+<a name="134"><span class="lineNum">     134 </span>            : #define IMGBUILD_ERR_SCOM_HDRS_NOT_SYNCD     72  // Scom headers out of sync.</a>
+<a name="135"><span class="lineNum">     135 </span>            : #define IMGBUILD_ERR_SCOM_ENTRY_NOT_FOUND    74  // Scom entry not found (OR/AND oper.)</a>
+<a name="136"><span class="lineNum">     136 </span>            : #define IMGBUILD_ERR_SCOM_REPEAT_ENTRIES     76  // Repeat entries not allow.</a>
+<a name="137"><span class="lineNum">     137 </span>            : #define IMGBUILD_ERR_SCOM_INVALID_SUBSECTION 77  // Invalid subsection value.</a>
+<a name="138"><span class="lineNum">     138 </span>            : #define IMGBUILD_ERR_SCOM_TABLE_FAIL         79  // Unsuccessful SCOM table build.</a>
+<a name="139"><span class="lineNum">     139 </span>            : </a>
+<a name="140"><span class="lineNum">     140 </span>            : #if defined SLW_COMMAND_LINE_RAM || defined XIPC_COMMAND_LINE</a>
+<a name="141"><span class="lineNum">     141 </span>            : #define SLW_COMMAND_LINE</a>
+<a name="142"><span class="lineNum">     142 </span>            : #endif</a>
+<a name="143"><span class="lineNum">     143 </span>            : </a>
+<a name="144"><span class="lineNum">     144 </span>            : #if defined __FAPI &amp;&amp; !(defined __P8_PORE_TABLE_GEN_API_C)</a>
+<a name="145"><span class="lineNum">     145 </span>            : #define MY_INF(_fmt_, _args_...) FAPI_INF(_fmt_, ##_args_)</a>
+<a name="146"><span class="lineNum">     146 </span>            : #ifndef SLW_COMMAND_LINE</a>
+<a name="147"><span class="lineNum">     147 </span>            : #define MY_ERR(_fmt_, _args_...) FAPI_ERR(_fmt_, ##_args_)</a>
+<a name="148"><span class="lineNum">     148 </span>            : #else</a>
+<a name="149"><span class="lineNum">     149 </span>            : #define MY_ERR(_fmt_, _args_...) FAPI_INF(_fmt_, ##_args_)</a>
+<a name="150"><span class="lineNum">     150 </span>            : #endif // End of SLW_COMMAND_LINE</a>
+<a name="151"><span class="lineNum">     151 </span>            : #define MY_DBG(_fmt_, _args_...) FAPI_DBG(_fmt_, ##_args_)</a>
+<a name="152"><span class="lineNum">     152 </span>            : #else  // End of __FAPI</a>
+<a name="153"><span class="lineNum">     153 </span>            : #ifdef SLW_COMMAND_LINE</a>
+<a name="154"><span class="lineNum">     154 </span>            : #define MY_INF(_fmt_, _args_...) printf(_fmt_, ##_args_)</a>
+<a name="155"><span class="lineNum">     155 </span>            : #define MY_ERR(_fmt_, _args_...) printf(_fmt_, ##_args_)</a>
+<a name="156"><span class="lineNum">     156 </span>            : #define MY_DBG(_fmt_, _args_...) printf(_fmt_, ##_args_)</a>
+<a name="157"><span class="lineNum">     157 </span>            : #else  // End of SLW_COMMAND_LINE</a>
+<a name="158"><span class="lineNum">     158 </span>            : #ifdef __SKIBOOT__</a>
+<a name="159"><span class="lineNum">     159 </span>            : #define pr_fmt(fmt) &quot;LIBPORE: &quot; fmt</a>
+<a name="160"><span class="lineNum">     160 </span>            : #include &lt;skiboot.h&gt;</a>
+<a name="161"><span class="lineNum">     161 </span>            : //#define MY_INF(_fmt_, _args_...) prlog(PR_TRACE, _fmt_, ##_args_)</a>
+<a name="162"><span class="lineNum">     162 </span>            : #define MY_INF(_fmt_, _args_...) do { } while(0)</a>
+<a name="163"><span class="lineNum">     163 </span>            : #define MY_ERR(_fmt_, _args_...) prerror(_fmt_, ##_args_)</a>
+<a name="164"><span class="lineNum">     164 </span>            : //#define MY_DBG(_fmt_, _args_...) prlog(PR_INSANE, _fmt_, ##_args_)</a>
+<a name="165"><span class="lineNum">     165 </span>            : #define MY_DBG(_fmt_, _args_...) do { } while(0)</a>
+<a name="166"><span class="lineNum">     166 </span>            : #else</a>
+<a name="167"><span class="lineNum">     167 </span>            : #define MY_INF(_fmt_, _args_...) do { } while(0)</a>
+<a name="168"><span class="lineNum">     168 </span>            : #define MY_ERR(_fmt_, _args_...) do { } while(0)</a>
+<a name="169"><span class="lineNum">     169 </span>            : #define MY_DBG(_fmt_, _args_...) do { } while(0)</a>
+<a name="170"><span class="lineNum">     170 </span>            : #endif</a>
+<a name="171"><span class="lineNum">     171 </span>            : #endif  // End of not(__FAPI) &amp; not(SLW_COMMAND_LINE)</a>
+<a name="172"><span class="lineNum">     172 </span>            : #endif</a>
+<a name="173"><span class="lineNum">     173 </span>            : </a>
+<a name="174"><span class="lineNum">     174 </span>            : #ifdef SLW_COMMAND_LINE</a>
+<a name="175"><span class="lineNum">     175 </span>            : // Debug and development stuff</a>
+<a name="176"><span class="lineNum">     176 </span>            : //#define IGNORE_FOR_NOW  // Causes code sections to be ignored.</a>
+<a name="177"><span class="lineNum">     177 </span>            : #define DEBUG_SUPPORT   // Activates sbe-xip debug support.</a>
+<a name="178"><span class="lineNum">     178 </span>            : #endif</a>
+<a name="179"><span class="lineNum">     179 </span>            : </a>
+<a name="180"><span class="lineNum">     180 </span>            : /* XXX TEMPORARY */</a>
+<a name="181"><span class="lineNum">     181 </span>            : #ifdef __SKIBOOT__</a>
+<a name="182"><span class="lineNum">     182 </span>            : #define DEBUG_SUPPORT   // Activates sbe-xip debug support.</a>
+<a name="183"><span class="lineNum">     183 </span>            : #endif</a>
+<a name="184"><span class="lineNum">     184 </span>            : </a>
+<a name="185"><span class="lineNum">     185 </span>            : //#include &lt;stdio.h&gt;</a>
+<a name="186"><span class="lineNum">     186 </span>            : //#include &lt;stdint.h&gt;</a>
+<a name="187"><span class="lineNum">     187 </span>            : //#include &lt;stdlib.h&gt;</a>
+<a name="188"><span class="lineNum">     188 </span>            : #include &lt;p8_pore_api_custom.h&gt;</a>
+<a name="189"><span class="lineNum">     189 </span>            : #include &lt;string.h&gt;</a>
+<a name="190"><span class="lineNum">     190 </span>            : </a>
+<a name="191"><span class="lineNum">     191 </span>            : #if defined SLW_COMMAND_LINE</a>
+<a name="192"><span class="lineNum">     192 </span>            : #include &lt;stdint.h&gt; // May be in conflict with p8_pore_api_custom.h</a>
+<a name="193"><span class="lineNum">     193 </span>            : #include &lt;stdlib.h&gt; // May be in conflict with p8_pore_api_custom.h</a>
+<a name="194"><span class="lineNum">     194 </span>            : #include &lt;stdio.h&gt;</a>
+<a name="195"><span class="lineNum">     195 </span>            : #include &lt;sys/mman.h&gt;</a>
+<a name="196"><span class="lineNum">     196 </span>            : #include &lt;unistd.h&gt;</a>
+<a name="197"><span class="lineNum">     197 </span>            : #include &lt;fcntl.h&gt;</a>
+<a name="198"><span class="lineNum">     198 </span>            : #include &lt;sys/stat.h&gt;</a>
+<a name="199"><span class="lineNum">     199 </span>            : #endif //End of SLW_COMMAND_LINE</a>
+<a name="200"><span class="lineNum">     200 </span>            : </a>
+<a name="201"><span class="lineNum">     201 </span>            : // Not needed by:</a>
+<a name="202"><span class="lineNum">     202 </span>            : // - Done: p8_pore_table_gen_api, p8_slw_build, p8_xip_customize, sbe_xip_tool,</a>
+<a name="203"><span class="lineNum">     203 </span>            : //   p8_delta_scan, p8_ipl_build, p8_centaur_build.</a>
+<a name="204"><span class="lineNum">     204 </span>            : // - So, what was this used for?</a>
+<a name="205"><span class="lineNum">     205 </span>            : //#include &lt;pore_bitmanip.H&gt;</a>
+<a name="206"><span class="lineNum">     206 </span>            : </a>
+<a name="207"><span class="lineNum">     207 </span>            : #include &lt;p8_image_help_base.H&gt;</a>
+<a name="208"><span class="lineNum">     208 </span>            : </a>
+<a name="209"><span class="lineNum">     209 </span>            : #if !(defined __P8_PORE_TABLE_GEN_API_C) &amp;&amp; !(defined __CEN_XIP_CUSTOMIZE_C) &amp;&amp; !(defined SLW_COMMAND_LINE_RAM)</a>
+<a name="210"><span class="lineNum">     210 </span>            : // We don't need this include for gen_cpureg/scom or slw ramming.</a>
+<a name="211"><span class="lineNum">     211 </span>            : #include &lt;p8_scan_compression.H&gt;</a>
+<a name="212"><span class="lineNum">     212 </span>            : #endif</a>
+<a name="213"><span class="lineNum">     213 </span>            : </a>
+<a name="214"><span class="lineNum">     214 </span>            : #undef __PORE_INLINE_ASSEMBLER_C__</a>
+<a name="215"><span class="lineNum">     215 </span>            : #include &lt;pore_inline.h&gt;</a>
+<a name="216"><span class="lineNum">     216 </span>            : </a>
+<a name="217"><span class="lineNum">     217 </span>            : #if( defined(__cplusplus) &amp;&amp; !defined(PLIC_MODULE) )</a>
+<a name="218"><span class="lineNum">     218 </span>            : extern &quot;C&quot; {</a>
+<a name="219"><span class="lineNum">     219 </span>            : #endif</a>
+<a name="220"><span class="lineNum">     220 </span>            : </a>
+<a name="221"><span class="lineNum">     221 </span>            : </a>
+<a name="222"><span class="lineNum">     222 </span>            : #if !(defined __P8_PORE_TABLE_GEN_API_C) &amp;&amp; !(defined SLW_COMMAND_LINE_RAM)</a>
+<a name="223"><span class="lineNum">     223 </span>            : </a>
+<a name="224"><span class="lineNum">     224 </span>            : // Info:</a>
+<a name="225"><span class="lineNum">     225 </span>            : // DeltaRingLayout describes the sequential order of the content in the compressed delta</a>
+<a name="226"><span class="lineNum">     226 </span>            : //   ring blocks in the .initf section in the SBE-XIP images.</a>
+<a name="227"><span class="lineNum">     227 </span>            : // When creating the .initf delta ring blocks, the following rules must be followed:</a>
+<a name="228"><span class="lineNum">     228 </span>            : // - Everything must be stored in BE format.</a>
+<a name="229"><span class="lineNum">     229 </span>            : // - {entryOffset; sizeOfThis; sizeOfMeta; metaData} must be word-aligned to ensure </a>
+<a name="230"><span class="lineNum">     230 </span>            : //   that the {rs4Launch} starts on a word boundary.</a>
+<a name="231"><span class="lineNum">     231 </span>            : // - {rs4Launch} must start on a word boundary (see earlier rule how to do that).</a>
+<a name="232"><span class="lineNum">     232 </span>            : // - {entryOffset; sizeOfThis; sizeOfMeta; metaData; rs4Launch} must be double-word-</a>
+<a name="233"><span class="lineNum">     233 </span>            : //   aligned to ensure that {rs4Delta} starts on a double-word boundary.</a>
+<a name="234"><span class="lineNum">     234 </span>            : // - {rs4Delta} must start on a double-word bournday (see earlier rule how to do that).</a>
+<a name="235"><span class="lineNum">     235 </span>            : //</a>
+<a name="236"><span class="lineNum">     236 </span>            : typedef struct {</a>
+<a name="237"><span class="lineNum">     237 </span>            :   uint64_t entryOffset;</a>
+<a name="238"><span class="lineNum">     238 </span>            :   uint64_t backItemPtr;</a>
+<a name="239"><span class="lineNum">     239 </span>            :   uint32_t sizeOfThis;</a>
+<a name="240"><span class="lineNum">     240 </span>            :   uint32_t sizeOfMeta; // Exact size of meta data. Arbitrary size. Not null terminated.</a>
+<a name="241"><span class="lineNum">     241 </span>            :   uint32_t ddLevel;</a>
+<a name="242"><span class="lineNum">     242 </span>            :   uint8_t  sysPhase;</a>
+<a name="243"><span class="lineNum">     243 </span>            :   uint8_t  override;</a>
+<a name="244"><span class="lineNum">     244 </span>            :   uint8_t  reserved1;</a>
+<a name="245"><span class="lineNum">     245 </span>            :   uint8_t  reserved2;</a>
+<a name="246"><span class="lineNum">     246 </span>            :   char     *metaData;  // Arbitrary size. Extra bytes to next alignment are random or 0s.</a>
+<a name="247"><span class="lineNum">     247 </span>            :   uint32_t *rs4Launch; // Code. Must be 4-byte aligned. Actually should be 8-B align!</a>
+<a name="248"><span class="lineNum">     248 </span>            :   uint32_t *rs4Delta;  // Data. Must be 8-byte aligned.</a>
+<a name="249"><span class="lineNum">     249 </span>            :   uint32_t *wfInline;  // Code. Must be 4-byte aligned. Actually should be 8-B align!</a>
+<a name="250"><span class="lineNum">     250 </span>            : } DeltaRingLayout;</a>
+<a name="251"><span class="lineNum">     251 </span>            : </a>
+<a name="252"><span class="lineNum">     252 </span>            : typedef struct {</a>
+<a name="253"><span class="lineNum">     253 </span>            :   uint32_t sizeOfData;</a>
+<a name="254"><span class="lineNum">     254 </span>            :   char     data[];</a>
+<a name="255"><span class="lineNum">     255 </span>            : } MetaData;</a>
+<a name="256"><span class="lineNum">     256 </span>            : </a>
+<a name="257"><span class="lineNum">     257 </span>            : int calc_ring_delta_state(  </a>
+<a name="258"><span class="lineNum">     258 </span>            :               const uint32_t  *i_init,</a>
+<a name="259"><span class="lineNum">     259 </span>            :                                                         const uint32_t  *i_alter,</a>
+<a name="260"><span class="lineNum">     260 </span>            :                                                         uint32_t        *o_delta,</a>
+<a name="261"><span class="lineNum">     261 </span>            :                                                         const uint32_t  i_ringLen);</a>
+<a name="262"><span class="lineNum">     262 </span>            : </a>
+<a name="263"><span class="lineNum">     263 </span>            : int  create_wiggle_flip_prg(  </a>
+<a name="264"><span class="lineNum">     264 </span>            :               uint32_t   *i_deltaRing,</a>
+<a name="265"><span class="lineNum">     265 </span>            :               uint32_t   i_ringBitLen,</a>
+<a name="266"><span class="lineNum">     266 </span>            :               uint32_t   i_scanSelectData,</a>
+<a name="267"><span class="lineNum">     267 </span>            :               uint32_t   i_chipletID,</a>
+<a name="268"><span class="lineNum">     268 </span>            :               uint32_t   **o_wfInline,</a>
+<a name="269"><span class="lineNum">     269 </span>            :               uint32_t   *o_wfInlineLenInWords,</a>
+<a name="270"><span class="lineNum">     270 </span>            :               uint8_t    i_flushOptimization,</a>
+<a name="271"><span class="lineNum">     271 </span>            :                                                         uint32_t   i_scanMaxRotate,</a>
+<a name="272"><span class="lineNum">     272 </span>            :               uint32_t   i_waitsScanDelay,</a>
+<a name="273"><span class="lineNum">     273 </span>            :               uint32_t   i_ddLevel);</a>
+<a name="274"><span class="lineNum">     274 </span>            : </a>
+<a name="275"><span class="lineNum">     275 </span>            : uint64_t calc_ring_layout_entry_offset(</a>
+<a name="276"><span class="lineNum">     276 </span>            :                                                         uint8_t  i_typeRingLayout,</a>
+<a name="277"><span class="lineNum">     277 </span>            :                                                         uint32_t i_sizeMetaData);</a>
+<a name="278"><span class="lineNum">     278 </span>            : </a>
+<a name="279"><span class="lineNum">     279 </span>            : int write_ring_block_to_image(  </a>
+<a name="280"><span class="lineNum">     280 </span>            :                                                         void             *io_image,</a>
+<a name="281"><span class="lineNum">     281 </span>            :                                                         const char       *i_ringName,    // NULL if no name.</a>
+<a name="282"><span class="lineNum">     282 </span>            :               DeltaRingLayout  *i_ringBlock,</a>
+<a name="283"><span class="lineNum">     283 </span>            :                                                         const uint8_t    i_idxVector,   // [0-15] - Ignored if ringName==NULL</a>
+<a name="284"><span class="lineNum">     284 </span>            :                                                         const uint8_t    i_override,    // [0,1]  - Ignored if ringName==NULL</a>
+<a name="285"><span class="lineNum">     285 </span>            :                                                         const uint8_t    i_overridable, // [0,1]  - Ignored if ringName==NULL</a>
+<a name="286"><span class="lineNum">     286 </span>            :               const uint32_t   i_sizeImageMax,</a>
+<a name="287"><span class="lineNum">     287 </span>            :               const uint8_t    i_xipSectionId,</a>
+<a name="288"><span class="lineNum">     288 </span>            :               void             *i_bufTmp,</a>
+<a name="289"><span class="lineNum">     289 </span>            :               const uint32_t   i_sizeBufTmp);</a>
+<a name="290"><span class="lineNum">     290 </span>            : </a>
+<a name="291"><span class="lineNum">     291 </span>            : #if !(defined __CEN_XIP_CUSTOMIZE_C)</a>
+<a name="292"><span class="lineNum">     292 </span>            : </a>
+<a name="293"><span class="lineNum">     293 </span>            : int p8_centaur_build( </a>
+<a name="294"><span class="lineNum">     294 </span>            :                                                         void      *i_imageIn,</a>
+<a name="295"><span class="lineNum">     295 </span>            :               uint32_t  i_ddLevel,</a>
+<a name="296"><span class="lineNum">     296 </span>            :               void      *i_imageOut,</a>
+<a name="297"><span class="lineNum">     297 </span>            :               uint32_t  i_sizeImageOutMax);</a>
+<a name="298"><span class="lineNum">     298 </span>            : </a>
+<a name="299"><span class="lineNum">     299 </span>            : int p8_ipl_build(     </a>
+<a name="300"><span class="lineNum">     300 </span>            :                                                         void      *i_imageIn,</a>
+<a name="301"><span class="lineNum">     301 </span>            :               uint32_t  i_ddLevel,</a>
+<a name="302"><span class="lineNum">     302 </span>            :               void      *i_imageOut,</a>
+<a name="303"><span class="lineNum">     303 </span>            :               uint32_t  i_sizeImageOutMax);</a>
+<a name="304"><span class="lineNum">     304 </span>            : </a>
+<a name="305"><span class="lineNum">     305 </span>            : int get_ring_layout_from_image2(  </a>
+<a name="306"><span class="lineNum">     306 </span>            :                                                         const void  *i_imageIn,</a>
+<a name="307"><span class="lineNum">     307 </span>            :               uint32_t    i_ddLevel,</a>
+<a name="308"><span class="lineNum">     308 </span>            :               uint8_t      i_sysPhase,</a>
+<a name="309"><span class="lineNum">     309 </span>            :               DeltaRingLayout  **o_rs4RingLayout,</a>
+<a name="310"><span class="lineNum">     310 </span>            :               void        **nextRing,</a>
+<a name="311"><span class="lineNum">     311 </span>            :               uint8_t     i_xipSectionId);</a>
+<a name="312"><span class="lineNum">     312 </span>            : </a>
+<a name="313"><span class="lineNum">     313 </span>            : int gen_ring_delta_state(  </a>
+<a name="314"><span class="lineNum">     314 </span>            :               uint32_t   bitLen, </a>
+<a name="315"><span class="lineNum">     315 </span>            :               uint32_t   *i_init, </a>
+<a name="316"><span class="lineNum">     316 </span>            :               uint32_t   *i_alter,</a>
+<a name="317"><span class="lineNum">     317 </span>            :               uint32_t   *o_delta,</a>
+<a name="318"><span class="lineNum">     318 </span>            :               uint32_t   verbose);</a>
+<a name="319"><span class="lineNum">     319 </span>            : </a>
+<a name="320"><span class="lineNum">     320 </span>            : int write_rs4_ring_to_ref_image(  </a>
+<a name="321"><span class="lineNum">     321 </span>            :               char       *i_fnImage,</a>
+<a name="322"><span class="lineNum">     322 </span>            :               CompressedScanData *i_RS4,</a>
+<a name="323"><span class="lineNum">     323 </span>            :               uint32_t   i_ddLevel,</a>
+<a name="324"><span class="lineNum">     324 </span>            :               uint8_t    i_sysPhase,</a>
+<a name="325"><span class="lineNum">     325 </span>            :               uint8_t    i_override,</a>
+<a name="326"><span class="lineNum">     326 </span>            :                                                         uint8_t    i_ringType,</a>
+<a name="327"><span class="lineNum">     327 </span>            :               char       *i_varName,</a>
+<a name="328"><span class="lineNum">     328 </span>            :               char       *i_fnMetaData,</a>
+<a name="329"><span class="lineNum">     329 </span>            :                                                         void       *i_bufTmp,</a>
+<a name="330"><span class="lineNum">     330 </span>            :                                                         uint32_t   i_sizeBufTmp,</a>
+<a name="331"><span class="lineNum">     331 </span>            :               uint32_t   verbose);</a>
+<a name="332"><span class="lineNum">     332 </span>            : </a>
+<a name="333"><span class="lineNum">     333 </span>            : int write_vpd_ring_to_ipl_image(</a>
+<a name="334"><span class="lineNum">     334 </span>            :               void       *io_image,</a>
+<a name="335"><span class="lineNum">     335 </span>            :                                                         uint32_t   &amp;io_sizeImageOut,</a>
+<a name="336"><span class="lineNum">     336 </span>            :                                                         CompressedScanData *i_bufRs4Ring,</a>
+<a name="337"><span class="lineNum">     337 </span>            :                                                         uint32_t   i_ddLevel,</a>
+<a name="338"><span class="lineNum">     338 </span>            :                                                         uint8_t    i_sysPhase,</a>
+<a name="339"><span class="lineNum">     339 </span>            :               char       *i_ringName,</a>
+<a name="340"><span class="lineNum">     340 </span>            :                                                         void       *i_bufTmp,</a>
+<a name="341"><span class="lineNum">     341 </span>            :                                                         uint32_t   i_sizeBufTmp,</a>
+<a name="342"><span class="lineNum">     342 </span>            :               uint8_t    i_xipSection);</a>
+<a name="343"><span class="lineNum">     343 </span>            : </a>
+<a name="344"><span class="lineNum">     344 </span>            : int write_vpd_ring_to_slw_image(</a>
+<a name="345"><span class="lineNum">     345 </span>            :               void       *io_image,</a>
+<a name="346"><span class="lineNum">     346 </span>            :                                                         uint32_t   &amp;io_sizeImageOut,</a>
+<a name="347"><span class="lineNum">     347 </span>            :                                                         CompressedScanData *i_bufRs4Ring,</a>
+<a name="348"><span class="lineNum">     348 </span>            :                                                         uint32_t   i_ddLevel,</a>
+<a name="349"><span class="lineNum">     349 </span>            :                                                         uint8_t    i_sysPhase,</a>
+<a name="350"><span class="lineNum">     350 </span>            :               char       *i_ringName,</a>
+<a name="351"><span class="lineNum">     351 </span>            :                                                         void       *i_bufTmp,</a>
+<a name="352"><span class="lineNum">     352 </span>            :                                                         uint32_t   i_sizeBufTmp,</a>
+<a name="353"><span class="lineNum">     353 </span>            :               uint8_t    i_bWcSpace);</a>
+<a name="354"><span class="lineNum">     354 </span>            : </a>
+<a name="355"><span class="lineNum">     355 </span>            : int check_and_perform_ring_datacare( </a>
+<a name="356"><span class="lineNum">     356 </span>            :                                                   void      *i_imageRef,</a>
+<a name="357"><span class="lineNum">     357 </span>            :                                                         void      *io_buf1,</a>
+<a name="358"><span class="lineNum">     358 </span>            :                                                         uint8_t   i_ddLevel,</a>
+<a name="359"><span class="lineNum">     359 </span>            :                                                   uint8_t   i_sysPhase,</a>
+<a name="360"><span class="lineNum">     360 </span>            :                                                         char      *i_ringName,</a>
+<a name="361"><span class="lineNum">     361 </span>            :                                                         void      *i_buf2,</a>
+<a name="362"><span class="lineNum">     362 </span>            :                                                         uint32_t  i_sizeBuf2);</a>
+<a name="363"><span class="lineNum">     363 </span>            :                                                         </a>
+<a name="364"><span class="lineNum">     364 </span>            : int get_delta_ring_from_image(</a>
+<a name="365"><span class="lineNum">     365 </span>            :               char       *i_fnImage,</a>
+<a name="366"><span class="lineNum">     366 </span>            :               char       *i_varName,</a>
+<a name="367"><span class="lineNum">     367 </span>            :               uint32_t   i_ddLevel,</a>
+<a name="368"><span class="lineNum">     368 </span>            :               uint8_t    i_sysPhase,</a>
+<a name="369"><span class="lineNum">     369 </span>            :               uint8_t    i_override,</a>
+<a name="370"><span class="lineNum">     370 </span>            :               MetaData  **o_metaData,</a>
+<a name="371"><span class="lineNum">     371 </span>            :               CompressedScanData  **o_deltaRingRS4,</a>
+<a name="372"><span class="lineNum">     372 </span>            :               uint32_t   verbose);</a>
+<a name="373"><span class="lineNum">     373 </span>            : </a>
+<a name="374"><span class="lineNum">     374 </span>            : int write_wiggle_flip_to_image(</a>
+<a name="375"><span class="lineNum">     375 </span>            :               void       *io_imageOut,</a>
+<a name="376"><span class="lineNum">     376 </span>            :               uint32_t   *i_sizeImageMaxNew,</a>
+<a name="377"><span class="lineNum">     377 </span>            :               DeltaRingLayout *i_ringLayout,</a>
+<a name="378"><span class="lineNum">     378 </span>            :               uint32_t   *i_wfInline,</a>
+<a name="379"><span class="lineNum">     379 </span>            :               uint32_t   i_wfInlineLenInWords);</a>
+<a name="380"><span class="lineNum">     380 </span>            : </a>
+<a name="381"><span class="lineNum">     381 </span>            : int get_ring_layout_from_image(  </a>
+<a name="382"><span class="lineNum">     382 </span>            :               const void *i_imageIn,</a>
+<a name="383"><span class="lineNum">     383 </span>            :               uint32_t   i_ddLevel,</a>
+<a name="384"><span class="lineNum">     384 </span>            :               uint8_t    i_sysPhase,</a>
+<a name="385"><span class="lineNum">     385 </span>            :               DeltaRingLayout  *o_rs4RingLayout,</a>
+<a name="386"><span class="lineNum">     386 </span>            :               void       **nextRing);</a>
+<a name="387"><span class="lineNum">     387 </span>            : </a>
+<a name="388"><span class="lineNum">     388 </span>            : int append_empty_section(</a>
+<a name="389"><span class="lineNum">     389 </span>            :               void      *io_image,</a>
+<a name="390"><span class="lineNum">     390 </span>            :               int       *i_sizeImageMaxNew,</a>
+<a name="391"><span class="lineNum">     391 </span>            :               uint32_t  i_sectionId,</a>
+<a name="392"><span class="lineNum">     392 </span>            :               int       *i_sizeSection,</a>
+<a name="393"><span class="lineNum">     393 </span>            :                                                         uint8_t   i_bFixed);</a>
+<a name="394"><span class="lineNum">     394 </span>            : </a>
+<a name="395"><span class="lineNum">     395 </span>            : int initialize_slw_section(</a>
+<a name="396"><span class="lineNum">     396 </span>            :               void      *io_image,</a>
+<a name="397"><span class="lineNum">     397 </span>            :               uint32_t  *i_sizeImageMaxNew);</a>
+<a name="398"><span class="lineNum">     398 </span>            : </a>
+<a name="399"><span class="lineNum">     399 </span>            : int create_and_initialize_fixed_image(</a>
+<a name="400"><span class="lineNum">     400 </span>            :               void      *io_image);</a>
+<a name="401"><span class="lineNum">     401 </span>            : </a>
+<a name="402"><span class="lineNum">     402 </span>            : int update_runtime_scom_pointer(</a>
+<a name="403"><span class="lineNum">     403 </span>            :                                                         void                    *io_image);</a>
+<a name="404"><span class="lineNum">     404 </span>            : </a>
+<a name="405"><span class="lineNum">     405 </span>            : void cleanup(</a>
+<a name="406"><span class="lineNum">     406 </span>            :               void *buf1=NULL,</a>
+<a name="407"><span class="lineNum">     407 </span>            :               void *buf2=NULL,</a>
+<a name="408"><span class="lineNum">     408 </span>            :               void *buf3=NULL,</a>
+<a name="409"><span class="lineNum">     409 </span>            :               void *buf4=NULL,</a>
+<a name="410"><span class="lineNum">     410 </span>            :               void *buf5=NULL);</a>
+<a name="411"><span class="lineNum">     411 </span>            :               </a>
+<a name="412"><span class="lineNum">     412 </span>            : #endif  // End of !(defined __CEN_XIP_CUSTOMIZE_C)</a>
+<a name="413"><span class="lineNum">     413 </span>            : </a>
+<a name="414"><span class="lineNum">     414 </span>            : #endif  // End of !(defined __P8_PORE_TABLE_GEN_API_C) &amp;&amp; !(defined SLW_COMMAND_LINE_RAM)</a>
+<a name="415"><span class="lineNum">     415 </span>            : </a>
+<a name="416"><span class="lineNum">     416 </span>            : // Byte-reverse a 32-bit integer if on an LE machine</a>
+<a name="417"><span class="lineNum">     417 </span><span class="lineNoCov">          0 : static inline uint32_t myRev32(const uint32_t i_x)</span></a>
+<a name="418"><span class="lineNum">     418 </span>            : {</a>
+<a name="419"><span class="lineNum">     419 </span><span class="lineNoCov">          0 :     uint32_t rx;</span></a>
+<a name="420"><span class="lineNum">     420 </span>            : </a>
+<a name="421"><span class="lineNum">     421 </span>            : #ifdef _BIG_ENDIAN</a>
+<a name="422"><span class="lineNum">     422 </span><span class="lineNoCov">          0 :     rx = i_x;</span></a>
+<a name="423"><span class="lineNum">     423 </span>            : #else</a>
+<a name="424"><span class="lineNum">     424 </span>            :     uint8_t *pix = (uint8_t*)(&amp;i_x);</a>
+<a name="425"><span class="lineNum">     425 </span>            :     uint8_t *prx = (uint8_t*)(&amp;rx);</a>
+<a name="426"><span class="lineNum">     426 </span>            : </a>
+<a name="427"><span class="lineNum">     427 </span>            :     prx[0] = pix[3];</a>
+<a name="428"><span class="lineNum">     428 </span>            :     prx[1] = pix[2];</a>
+<a name="429"><span class="lineNum">     429 </span>            :     prx[2] = pix[1];</a>
+<a name="430"><span class="lineNum">     430 </span>            :     prx[3] = pix[0];</a>
+<a name="431"><span class="lineNum">     431 </span>            : #endif</a>
+<a name="432"><span class="lineNum">     432 </span>            : </a>
+<a name="433"><span class="lineNum">     433 </span><span class="lineNoCov">          0 :     return rx;</span></a>
+<a name="434"><span class="lineNum">     434 </span>            : }</a>
+<a name="435"><span class="lineNum">     435 </span>            : </a>
+<a name="436"><span class="lineNum">     436 </span>            : // Byte-reverse a 64-bit integer if on a little-endian machine</a>
+<a name="437"><span class="lineNum">     437 </span><span class="lineNoCov">          0 : static inline uint64_t myRev64(const uint64_t i_x)</span></a>
+<a name="438"><span class="lineNum">     438 </span>            : {</a>
+<a name="439"><span class="lineNum">     439 </span><span class="lineNoCov">          0 :     uint64_t rx;</span></a>
+<a name="440"><span class="lineNum">     440 </span>            : </a>
+<a name="441"><span class="lineNum">     441 </span>            : #ifdef _BIG_ENDIAN</a>
+<a name="442"><span class="lineNum">     442 </span><span class="lineNoCov">          0 :     rx = i_x;</span></a>
+<a name="443"><span class="lineNum">     443 </span>            : #else</a>
+<a name="444"><span class="lineNum">     444 </span>            :     uint8_t *pix = (uint8_t*)(&amp;i_x);</a>
+<a name="445"><span class="lineNum">     445 </span>            :     uint8_t *prx = (uint8_t*)(&amp;rx);</a>
+<a name="446"><span class="lineNum">     446 </span>            : </a>
+<a name="447"><span class="lineNum">     447 </span>            :     prx[0] = pix[7];</a>
+<a name="448"><span class="lineNum">     448 </span>            :     prx[1] = pix[6];</a>
+<a name="449"><span class="lineNum">     449 </span>            :     prx[2] = pix[5];</a>
+<a name="450"><span class="lineNum">     450 </span>            :     prx[3] = pix[4];</a>
+<a name="451"><span class="lineNum">     451 </span>            :     prx[4] = pix[3];</a>
+<a name="452"><span class="lineNum">     452 </span>            :     prx[5] = pix[2];</a>
+<a name="453"><span class="lineNum">     453 </span>            :     prx[6] = pix[1];</a>
+<a name="454"><span class="lineNum">     454 </span>            :     prx[7] = pix[0];</a>
+<a name="455"><span class="lineNum">     455 </span>            : #endif</a>
+<a name="456"><span class="lineNum">     456 </span>            : </a>
+<a name="457"><span class="lineNum">     457 </span><span class="lineNoCov">          0 :     return rx;</span></a>
+<a name="458"><span class="lineNum">     458 </span>            : }</a>
+<a name="459"><span class="lineNum">     459 </span>            : </a>
+<a name="460"><span class="lineNum">     460 </span>            : // N-byte align an address, offset or size (aos)</a>
+<a name="461"><span class="lineNum">     461 </span>            : static inline uint64_t myByteAlign( const uint8_t nBytes, const uint64_t aos)</a>
+<a name="462"><span class="lineNum">     462 </span>            : {</a>
+<a name="463"><span class="lineNum">     463 </span>            :   return ((aos+nBytes-1)/nBytes)*nBytes;</a>
+<a name="464"><span class="lineNum">     464 </span>            : }</a>
+<a name="465"><span class="lineNum">     465 </span>            : </a>
+<a name="466"><span class="lineNum">     466 </span>            : #if( defined(__cplusplus) &amp;&amp; !defined(PLIC_MODULE) )</a>
+<a name="467"><span class="lineNum">     467 </span>            : }</a>
+<a name="468"><span class="lineNum">     468 </span>            : #endif</a>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.14</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

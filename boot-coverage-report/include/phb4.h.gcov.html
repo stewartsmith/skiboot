@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - skiboot-boot.info - include/phb4.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">include</a> - phb4.h<span style="font-size: 80%;"> (source / <a href="phb4.h.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">skiboot-boot.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2019-07-22 06:09:47</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntryHi">-</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Copyright 2013-2016 IBM Corp.</a>
+<a name="2"><span class="lineNum">       2 </span>            :  *</a>
+<a name="3"><span class="lineNum">       3 </span>            :  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</a>
+<a name="4"><span class="lineNum">       4 </span>            :  * you may not use this file except in compliance with the License.</a>
+<a name="5"><span class="lineNum">       5 </span>            :  * You may obtain a copy of the License at</a>
+<a name="6"><span class="lineNum">       6 </span>            :  *</a>
+<a name="7"><span class="lineNum">       7 </span>            :  *      http://www.apache.org/licenses/LICENSE-2.0</a>
+<a name="8"><span class="lineNum">       8 </span>            :  *</a>
+<a name="9"><span class="lineNum">       9 </span>            :  * Unless required by applicable law or agreed to in writing, software</a>
+<a name="10"><span class="lineNum">      10 </span>            :  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</a>
+<a name="11"><span class="lineNum">      11 </span>            :  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or</a>
+<a name="12"><span class="lineNum">      12 </span>            :  * implied.</a>
+<a name="13"><span class="lineNum">      13 </span>            :  * See the License for the specific language governing permissions and</a>
+<a name="14"><span class="lineNum">      14 </span>            :  * limitations under the License.</a>
+<a name="15"><span class="lineNum">      15 </span>            :  */</a>
+<a name="16"><span class="lineNum">      16 </span>            : </a>
+<a name="17"><span class="lineNum">      17 </span>            : /*</a>
+<a name="18"><span class="lineNum">      18 </span>            : */</a>
+<a name="19"><span class="lineNum">      19 </span>            : #ifndef __PHB4_H</a>
+<a name="20"><span class="lineNum">      20 </span>            : #define __PHB4_H</a>
+<a name="21"><span class="lineNum">      21 </span>            : </a>
+<a name="22"><span class="lineNum">      22 </span>            : #include &lt;interrupts.h&gt;</a>
+<a name="23"><span class="lineNum">      23 </span>            : </a>
+<a name="24"><span class="lineNum">      24 </span>            : /*</a>
+<a name="25"><span class="lineNum">      25 </span>            :  * Memory map</a>
+<a name="26"><span class="lineNum">      26 </span>            :  *</a>
+<a name="27"><span class="lineNum">      27 </span>            :  * In addition to the 4K MMIO registers window, the PBCQ will</a>
+<a name="28"><span class="lineNum">      28 </span>            :  * forward down one or two large MMIO regions for use by the</a>
+<a name="29"><span class="lineNum">      29 </span>            :  * PHB.</a>
+<a name="30"><span class="lineNum">      30 </span>            :  *</a>
+<a name="31"><span class="lineNum">      31 </span>            :  * We try to use the largest MMIO window for the M64 space and</a>
+<a name="32"><span class="lineNum">      32 </span>            :  * the smallest for the M32 space, but we require at least 2G</a>
+<a name="33"><span class="lineNum">      33 </span>            :  * of M32, otherwise we carve it out of M64.</a>
+<a name="34"><span class="lineNum">      34 </span>            :  */</a>
+<a name="35"><span class="lineNum">      35 </span>            : </a>
+<a name="36"><span class="lineNum">      36 </span>            : #define M32_PCI_START           0x080000000     /* Offset of the actual M32 window in PCI */</a>
+<a name="37"><span class="lineNum">      37 </span>            : #define M32_PCI_SIZE            0x80000000ul    /* Size for M32 */</a>
+<a name="38"><span class="lineNum">      38 </span>            : </a>
+<a name="39"><span class="lineNum">      39 </span>            : #if 0</a>
+<a name="40"><span class="lineNum">      40 </span>            : /*</a>
+<a name="41"><span class="lineNum">      41 </span>            :  * Interrupt map.</a>
+<a name="42"><span class="lineNum">      42 </span>            :  *</a>
+<a name="43"><span class="lineNum">      43 </span>            :  * Each PHB supports 2K interrupt sources, which is shared by</a>
+<a name="44"><span class="lineNum">      44 </span>            :  * LSI and MSI. With default configuration, MSI would use range</a>
+<a name="45"><span class="lineNum">      45 </span>            :  * [0, 0x7f7] and LSI would use [0x7f8, 0x7ff]. The interrupt</a>
+<a name="46"><span class="lineNum">      46 </span>            :  * source should be combined with IRSN to form final hardware</a>
+<a name="47"><span class="lineNum">      47 </span>            :  * IRQ.</a>
+<a name="48"><span class="lineNum">      48 </span>            :  */</a>
+<a name="49"><span class="lineNum">      49 </span>            : #define PHB4_MSI_IRQ_MIN                0x000</a>
+<a name="50"><span class="lineNum">      50 </span>            : #define PHB4_MSI_IRQ_COUNT              0x7F8</a>
+<a name="51"><span class="lineNum">      51 </span>            : #define PHB4_MSI_IRQ_MAX                (PHB4_MSI_IRQ_MIN+PHB4_MSI_IRQ_COUNT-1)</a>
+<a name="52"><span class="lineNum">      52 </span>            : #define PHB4_LSI_IRQ_MIN                (PHB4_MSI_IRQ_COUNT)</a>
+<a name="53"><span class="lineNum">      53 </span>            : #define PHB4_LSI_IRQ_COUNT              8</a>
+<a name="54"><span class="lineNum">      54 </span>            : #define PHB4_LSI_IRQ_MAX                (PHB4_LSI_IRQ_MIN+PHB4_LSI_IRQ_COUNT-1)</a>
+<a name="55"><span class="lineNum">      55 </span>            : </a>
+<a name="56"><span class="lineNum">      56 </span>            : #define PHB4_MSI_IRQ_BASE(chip, phb)    (p8_chip_irq_phb_base(chip, phb) | \</a>
+<a name="57"><span class="lineNum">      57 </span>            :                                          PHB4_MSI_IRQ_MIN)</a>
+<a name="58"><span class="lineNum">      58 </span>            : #define PHB4_LSI_IRQ_BASE(chip, phb)    (p8_chip_irq_phb_base(chip, phb) | \</a>
+<a name="59"><span class="lineNum">      59 </span>            :                                          PHB4_LSI_IRQ_MIN)</a>
+<a name="60"><span class="lineNum">      60 </span>            : #define PHB4_IRQ_NUM(irq)               (irq &amp; 0x7FF)</a>
+<a name="61"><span class="lineNum">      61 </span>            : </a>
+<a name="62"><span class="lineNum">      62 </span>            : #endif</a>
+<a name="63"><span class="lineNum">      63 </span>            : </a>
+<a name="64"><span class="lineNum">      64 </span>            : /*</a>
+<a name="65"><span class="lineNum">      65 </span>            :  * LSI interrupts</a>
+<a name="66"><span class="lineNum">      66 </span>            :  *</a>
+<a name="67"><span class="lineNum">      67 </span>            :  * The LSI interrupt block supports 8 interrupts. 4 of them are the</a>
+<a name="68"><span class="lineNum">      68 </span>            :  * standard PCIe INTA..INTB. The rest is for additional functions</a>
+<a name="69"><span class="lineNum">      69 </span>            :  * of the PHB</a>
+<a name="70"><span class="lineNum">      70 </span>            :  */</a>
+<a name="71"><span class="lineNum">      71 </span>            : #define PHB4_LSI_PCIE_INTA              0</a>
+<a name="72"><span class="lineNum">      72 </span>            : #define PHB4_LSI_PCIE_INTB              1</a>
+<a name="73"><span class="lineNum">      73 </span>            : #define PHB4_LSI_PCIE_INTC              2</a>
+<a name="74"><span class="lineNum">      74 </span>            : #define PHB4_LSI_PCIE_INTD              3</a>
+<a name="75"><span class="lineNum">      75 </span>            : #define PHB4_LSI_PCIE_INF               6</a>
+<a name="76"><span class="lineNum">      76 </span>            : #define PHB4_LSI_PCIE_ER                7</a>
+<a name="77"><span class="lineNum">      77 </span>            : </a>
+<a name="78"><span class="lineNum">      78 </span>            : /*</a>
+<a name="79"><span class="lineNum">      79 </span>            :  * In-memory tables</a>
+<a name="80"><span class="lineNum">      80 </span>            :  *</a>
+<a name="81"><span class="lineNum">      81 </span>            :  * PHB4 requires a bunch of tables to be in memory instead of</a>
+<a name="82"><span class="lineNum">      82 </span>            :  * arrays inside the chip (unlike previous versions of the</a>
+<a name="83"><span class="lineNum">      83 </span>            :  * design).</a>
+<a name="84"><span class="lineNum">      84 </span>            :  *</a>
+<a name="85"><span class="lineNum">      85 </span>            :  * Some of them (IVT, etc...) will be provided by the OS via an</a>
+<a name="86"><span class="lineNum">      86 </span>            :  * OPAL call, not only not all of them, we also need to make sure</a>
+<a name="87"><span class="lineNum">      87 </span>            :  * some like PELT-V exist before we do our internal slot probing</a>
+<a name="88"><span class="lineNum">      88 </span>            :  * or bad thing would happen on error (the whole PHB would go into</a>
+<a name="89"><span class="lineNum">      89 </span>            :  * Fatal error state).</a>
+<a name="90"><span class="lineNum">      90 </span>            :  *</a>
+<a name="91"><span class="lineNum">      91 </span>            :  * So we maintain a set of tables internally for those mandatory</a>
+<a name="92"><span class="lineNum">      92 </span>            :  * ones within our core memory. They are fairly small. They can</a>
+<a name="93"><span class="lineNum">      93 </span>            :  * still be replaced by OS provided ones via OPAL APIs (and reset</a>
+<a name="94"><span class="lineNum">      94 </span>            :  * to the internal ones) so the OS can provide node local allocation</a>
+<a name="95"><span class="lineNum">      95 </span>            :  * for better performances.</a>
+<a name="96"><span class="lineNum">      96 </span>            :  *</a>
+<a name="97"><span class="lineNum">      97 </span>            :  * All those tables have to be naturally aligned</a>
+<a name="98"><span class="lineNum">      98 </span>            :  */</a>
+<a name="99"><span class="lineNum">      99 </span>            : </a>
+<a name="100"><span class="lineNum">     100 </span>            : /* RTT Table : 128KB - Maps RID to PE# </a>
+<a name="101"><span class="lineNum">     101 </span>            :  *</a>
+<a name="102"><span class="lineNum">     102 </span>            :  * Entries are 2 bytes indexed by PCIe RID</a>
+<a name="103"><span class="lineNum">     103 </span>            :  */</a>
+<a name="104"><span class="lineNum">     104 </span>            : #define RTT_TABLE_ENTRIES       0x10000</a>
+<a name="105"><span class="lineNum">     105 </span>            : #define RTT_TABLE_SIZE          0x20000</a>
+<a name="106"><span class="lineNum">     106 </span>            : #define PELTV_TABLE_SIZE_MAX    0x20000</a>
+<a name="107"><span class="lineNum">     107 </span>            : </a>
+<a name="108"><span class="lineNum">     108 </span>            : #define PHB4_RESERVED_PE_NUM(p) ((p)-&gt;num_pes - 1)</a>
+<a name="109"><span class="lineNum">     109 </span>            : </a>
+<a name="110"><span class="lineNum">     110 </span>            : /*</a>
+<a name="111"><span class="lineNum">     111 </span>            :  * PHB4 PCI slot state. When you're going to apply any</a>
+<a name="112"><span class="lineNum">     112 </span>            :  * changes here, please make sure the base state isn't</a>
+<a name="113"><span class="lineNum">     113 </span>            :  * conflicting with those defined in pci-slot.h</a>
+<a name="114"><span class="lineNum">     114 </span>            :  */</a>
+<a name="115"><span class="lineNum">     115 </span>            : #define PHB4_SLOT_NORMAL                        PCI_SLOT_STATE_NORMAL</a>
+<a name="116"><span class="lineNum">     116 </span>            : #define PHB4_SLOT_LINK                          PCI_SLOT_STATE_LINK</a>
+<a name="117"><span class="lineNum">     117 </span>            : #define   PHB4_SLOT_LINK_START                  (PHB4_SLOT_LINK + 1)</a>
+<a name="118"><span class="lineNum">     118 </span>            : #define   PHB4_SLOT_LINK_WAIT_ELECTRICAL        (PHB4_SLOT_LINK + 2)</a>
+<a name="119"><span class="lineNum">     119 </span>            : #define   PHB4_SLOT_LINK_WAIT                   (PHB4_SLOT_LINK + 3)</a>
+<a name="120"><span class="lineNum">     120 </span>            : #define   PHB4_SLOT_LINK_STABLE                 (PHB4_SLOT_LINK + 4)</a>
+<a name="121"><span class="lineNum">     121 </span>            : #define PHB4_SLOT_HRESET                        PCI_SLOT_STATE_HRESET</a>
+<a name="122"><span class="lineNum">     122 </span>            : #define   PHB4_SLOT_HRESET_START                (PHB4_SLOT_HRESET + 1)</a>
+<a name="123"><span class="lineNum">     123 </span>            : #define   PHB4_SLOT_HRESET_DELAY                (PHB4_SLOT_HRESET + 2)</a>
+<a name="124"><span class="lineNum">     124 </span>            : #define   PHB4_SLOT_HRESET_DELAY2               (PHB4_SLOT_HRESET + 3)</a>
+<a name="125"><span class="lineNum">     125 </span>            : #define PHB4_SLOT_FRESET                        PCI_SLOT_STATE_FRESET</a>
+<a name="126"><span class="lineNum">     126 </span>            : #define   PHB4_SLOT_FRESET_START                (PHB4_SLOT_FRESET + 1)</a>
+<a name="127"><span class="lineNum">     127 </span>            : #define   PHB4_SLOT_FRESET_ASSERT_DELAY         (PHB4_SLOT_FRESET + 2)</a>
+<a name="128"><span class="lineNum">     128 </span>            : #define PHB4_SLOT_CRESET                        PCI_SLOT_STATE_CRESET</a>
+<a name="129"><span class="lineNum">     129 </span>            : #define   PHB4_SLOT_CRESET_START                (PHB4_SLOT_CRESET + 1)</a>
+<a name="130"><span class="lineNum">     130 </span>            : #define   PHB4_SLOT_CRESET_WAIT_CQ              (PHB4_SLOT_CRESET + 2)</a>
+<a name="131"><span class="lineNum">     131 </span>            : #define   PHB4_SLOT_CRESET_REINIT               (PHB4_SLOT_CRESET + 3)</a>
+<a name="132"><span class="lineNum">     132 </span>            : #define   PHB4_SLOT_CRESET_FRESET               (PHB4_SLOT_CRESET + 4)</a>
+<a name="133"><span class="lineNum">     133 </span>            : </a>
+<a name="134"><span class="lineNum">     134 </span>            : /*</a>
+<a name="135"><span class="lineNum">     135 </span>            :  * PHB4 error descriptor. Errors from all components (PBCQ, PHB)</a>
+<a name="136"><span class="lineNum">     136 </span>            :  * will be cached to PHB4 instance. However, PBCQ errors would</a>
+<a name="137"><span class="lineNum">     137 </span>            :  * have higher priority than those from PHB</a>
+<a name="138"><span class="lineNum">     138 </span>            :  */</a>
+<a name="139"><span class="lineNum">     139 </span>            : #define PHB4_ERR_SRC_NONE       0</a>
+<a name="140"><span class="lineNum">     140 </span>            : #define PHB4_ERR_SRC_PBCQ       1</a>
+<a name="141"><span class="lineNum">     141 </span>            : #define PHB4_ERR_SRC_PHB        2</a>
+<a name="142"><span class="lineNum">     142 </span>            : </a>
+<a name="143"><span class="lineNum">     143 </span>            : #define PHB4_ERR_CLASS_NONE     0</a>
+<a name="144"><span class="lineNum">     144 </span>            : #define PHB4_ERR_CLASS_DEAD     1</a>
+<a name="145"><span class="lineNum">     145 </span>            : #define PHB4_ERR_CLASS_FENCED   2</a>
+<a name="146"><span class="lineNum">     146 </span>            : #define PHB4_ERR_CLASS_ER       3</a>
+<a name="147"><span class="lineNum">     147 </span>            : #define PHB4_ERR_CLASS_INF      4</a>
+<a name="148"><span class="lineNum">     148 </span>            : #define PHB4_ERR_CLASS_LAST     5</a>
+<a name="149"><span class="lineNum">     149 </span>            : </a>
+<a name="150"><span class="lineNum">     150 </span>            : struct phb4_err {</a>
+<a name="151"><span class="lineNum">     151 </span>            :         uint32_t err_src;</a>
+<a name="152"><span class="lineNum">     152 </span>            :         uint32_t err_class;</a>
+<a name="153"><span class="lineNum">     153 </span>            :         uint32_t err_bit;</a>
+<a name="154"><span class="lineNum">     154 </span>            : };</a>
+<a name="155"><span class="lineNum">     155 </span>            : </a>
+<a name="156"><span class="lineNum">     156 </span>            : #define PHB4_LINK_LINK_RETRIES          4</a>
+<a name="157"><span class="lineNum">     157 </span>            : /* Link timeouts, increments of 10ms */</a>
+<a name="158"><span class="lineNum">     158 </span>            : #define PHB4_LINK_ELECTRICAL_RETRIES    100</a>
+<a name="159"><span class="lineNum">     159 </span>            : #define PHB4_LINK_WAIT_RETRIES          200</a>
+<a name="160"><span class="lineNum">     160 </span>            : </a>
+<a name="161"><span class="lineNum">     161 </span>            : #define PHB4_RX_ERR_MAX                 8</a>
+<a name="162"><span class="lineNum">     162 </span>            : </a>
+<a name="163"><span class="lineNum">     163 </span>            : /* PHB4 flags */</a>
+<a name="164"><span class="lineNum">     164 </span>            : #define PHB4_AIB_FENCED         0x00000001</a>
+<a name="165"><span class="lineNum">     165 </span>            : #define PHB4_CFG_USE_ASB        0x00000002</a>
+<a name="166"><span class="lineNum">     166 </span>            : #define PHB4_CFG_BLOCKED        0x00000004</a>
+<a name="167"><span class="lineNum">     167 </span>            : #define PHB4_CAPP_RECOVERY      0x00000008</a>
+<a name="168"><span class="lineNum">     168 </span>            : #define PHB4_CAPP_DISABLE       0x00000010</a>
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<a name="170"><span class="lineNum">     170 </span>            : struct phb4 {</a>
+<a name="171"><span class="lineNum">     171 </span>            :         unsigned int            index;      /* 0..5 index inside p9 */</a>
+<a name="172"><span class="lineNum">     172 </span>            :         unsigned int            flags;</a>
+<a name="173"><span class="lineNum">     173 </span>            :         unsigned int            chip_id;    /* Chip ID (== GCID on p9) */</a>
+<a name="174"><span class="lineNum">     174 </span>            :         unsigned int            pec;</a>
+<a name="175"><span class="lineNum">     175 </span>            :         bool                    broken;</a>
+<a name="176"><span class="lineNum">     176 </span>            :         unsigned int            rev;        /* 00MMmmmm */</a>
+<a name="177"><span class="lineNum">     177 </span>            : #define PHB4_REV_NIMBUS_DD10    0xa40001</a>
+<a name="178"><span class="lineNum">     178 </span>            : #define PHB4_REV_NIMBUS_DD20    0xa40002</a>
+<a name="179"><span class="lineNum">     179 </span>            :         void                    *regs;</a>
+<a name="180"><span class="lineNum">     180 </span>            :         void                    *int_mmio;</a>
+<a name="181"><span class="lineNum">     181 </span>            :         uint64_t                pe_xscom;   /* XSCOM bases */</a>
+<a name="182"><span class="lineNum">     182 </span>            :         uint64_t                pe_stk_xscom;</a>
+<a name="183"><span class="lineNum">     183 </span>            :         uint64_t                pci_xscom;</a>
+<a name="184"><span class="lineNum">     184 </span>            :         uint64_t                pci_stk_xscom;</a>
+<a name="185"><span class="lineNum">     185 </span>            :         uint64_t                etu_xscom;</a>
+<a name="186"><span class="lineNum">     186 </span>            :         struct lock             lock;</a>
+<a name="187"><span class="lineNum">     187 </span>            :         uint64_t                mm0_base;    /* Full MM window to PHB */</a>
+<a name="188"><span class="lineNum">     188 </span>            :         uint64_t                mm0_size;    /* '' '' '' */</a>
+<a name="189"><span class="lineNum">     189 </span>            :         uint64_t                mm1_base;    /* Full MM window to PHB */</a>
+<a name="190"><span class="lineNum">     190 </span>            :         uint64_t                mm1_size;    /* '' '' '' */</a>
+<a name="191"><span class="lineNum">     191 </span>            :         uint32_t                base_msi;</a>
+<a name="192"><span class="lineNum">     192 </span>            :         uint32_t                base_lsi;</a>
+<a name="193"><span class="lineNum">     193 </span>            :         uint64_t                irq_port;</a>
+<a name="194"><span class="lineNum">     194 </span>            :         uint32_t                num_pes;</a>
+<a name="195"><span class="lineNum">     195 </span>            :         uint32_t                max_num_pes;</a>
+<a name="196"><span class="lineNum">     196 </span>            :         uint32_t                num_irqs;</a>
+<a name="197"><span class="lineNum">     197 </span>            :         uint64_t                creset_start_time;</a>
+<a name="198"><span class="lineNum">     198 </span>            : </a>
+<a name="199"><span class="lineNum">     199 </span>            :         /* SkiBoot owned in-memory tables */</a>
+<a name="200"><span class="lineNum">     200 </span>            :         uint16_t                *tbl_rtt;</a>
+<a name="201"><span class="lineNum">     201 </span>            :         uint8_t                 *tbl_peltv;</a>
+<a name="202"><span class="lineNum">     202 </span>            :         uint64_t                tbl_peltv_size;</a>
+<a name="203"><span class="lineNum">     203 </span>            :         uint64_t                tbl_pest;</a>
+<a name="204"><span class="lineNum">     204 </span>            :         uint64_t                tbl_pest_size;</a>
+<a name="205"><span class="lineNum">     205 </span>            : </a>
+<a name="206"><span class="lineNum">     206 </span>            :         bool                    skip_perst; /* Skip first perst */</a>
+<a name="207"><span class="lineNum">     207 </span>            :         bool                    has_link;</a>
+<a name="208"><span class="lineNum">     208 </span>            :         int64_t                 ecap;       /* cached PCI-E cap offset */</a>
+<a name="209"><span class="lineNum">     209 </span>            :         int64_t                 aercap;     /* cached AER ecap offset */</a>
+<a name="210"><span class="lineNum">     210 </span>            :         const __be64            *lane_eq;</a>
+<a name="211"><span class="lineNum">     211 </span>            :         bool                    lane_eq_en;</a>
+<a name="212"><span class="lineNum">     212 </span>            :         unsigned int            max_link_speed;</a>
+<a name="213"><span class="lineNum">     213 </span>            :         unsigned int            dt_max_link_speed;</a>
+<a name="214"><span class="lineNum">     214 </span>            : </a>
+<a name="215"><span class="lineNum">     215 </span>            :         uint64_t                mrt_size;</a>
+<a name="216"><span class="lineNum">     216 </span>            :         uint64_t                mbt_size;</a>
+<a name="217"><span class="lineNum">     217 </span>            :         uint64_t                tvt_size;</a>
+<a name="218"><span class="lineNum">     218 </span>            : </a>
+<a name="219"><span class="lineNum">     219 </span>            :         /* FIXME: dynamically allocate only what's needed below */</a>
+<a name="220"><span class="lineNum">     220 </span>            :         uint64_t                tve_cache[1024];</a>
+<a name="221"><span class="lineNum">     221 </span>            :         uint64_t                mbt_cache[32][2];</a>
+<a name="222"><span class="lineNum">     222 </span>            :         uint64_t                mdt_cache[512]; /* max num of PEs */</a>
+<a name="223"><span class="lineNum">     223 </span>            :         uint64_t                mist_cache[4096/4];/* max num of MSIs */</a>
+<a name="224"><span class="lineNum">     224 </span>            :         uint64_t                pfir_cache;     /* Used by complete reset */</a>
+<a name="225"><span class="lineNum">     225 </span>            :         uint64_t                nfir_cache;     /* Used by complete reset */</a>
+<a name="226"><span class="lineNum">     226 </span>            :         bool                    err_pending;</a>
+<a name="227"><span class="lineNum">     227 </span>            :         struct phb4_err         err;</a>
+<a name="228"><span class="lineNum">     228 </span>            : </a>
+<a name="229"><span class="lineNum">     229 </span>            :         /* Cache some RC registers that need to be emulated */</a>
+<a name="230"><span class="lineNum">     230 </span>            :         uint32_t                rc_cache[4];</a>
+<a name="231"><span class="lineNum">     231 </span>            : </a>
+<a name="232"><span class="lineNum">     232 </span>            :         /* Current NPU2 relaxed ordering state */</a>
+<a name="233"><span class="lineNum">     233 </span>            :         bool                    ro_state;</a>
+<a name="234"><span class="lineNum">     234 </span>            : </a>
+<a name="235"><span class="lineNum">     235 </span>            :         /* Any capp instance attached to the PHB4 */</a>
+<a name="236"><span class="lineNum">     236 </span>            :         struct capp             *capp;</a>
+<a name="237"><span class="lineNum">     237 </span>            : </a>
+<a name="238"><span class="lineNum">     238 </span>            :         struct phb              phb;</a>
+<a name="239"><span class="lineNum">     239 </span>            : };</a>
+<a name="240"><span class="lineNum">     240 </span>            : </a>
+<a name="241"><span class="lineNum">     241 </span><span class="lineNoCov">          0 : static inline struct phb4 *phb_to_phb4(struct phb *phb)</span></a>
+<a name="242"><span class="lineNum">     242 </span>            : {</a>
+<a name="243"><span class="lineNum">     243 </span><span class="lineNoCov">          0 :         return container_of(phb, struct phb4, phb);</span></a>
+<a name="244"><span class="lineNum">     244 </span>            : }</a>
+<a name="245"><span class="lineNum">     245 </span>            : </a>
+<a name="246"><span class="lineNum">     246 </span><span class="lineNoCov">          0 : static inline bool phb4_err_pending(struct phb4 *p)</span></a>
+<a name="247"><span class="lineNum">     247 </span>            : {</a>
+<a name="248"><span class="lineNum">     248 </span><span class="lineNoCov">          0 :         return p-&gt;err_pending;</span></a>
+<a name="249"><span class="lineNum">     249 </span>            : }</a>
+<a name="250"><span class="lineNum">     250 </span>            : </a>
+<a name="251"><span class="lineNum">     251 </span><span class="lineNoCov">          0 : static inline void phb4_set_err_pending(struct phb4 *p, bool pending)</span></a>
+<a name="252"><span class="lineNum">     252 </span>            : {</a>
+<a name="253"><span class="lineNum">     253 </span><span class="lineNoCov">          0 :         if (!pending) {</span></a>
+<a name="254"><span class="lineNum">     254 </span><span class="lineNoCov">          0 :                 p-&gt;err.err_src   = PHB4_ERR_SRC_NONE;</span></a>
+<a name="255"><span class="lineNum">     255 </span><span class="lineNoCov">          0 :                 p-&gt;err.err_class = PHB4_ERR_CLASS_NONE;</span></a>
+<a name="256"><span class="lineNum">     256 </span><span class="lineNoCov">          0 :                 p-&gt;err.err_bit   = -1;</span></a>
+<a name="257"><span class="lineNum">     257 </span>            :         }</a>
+<a name="258"><span class="lineNum">     258 </span>            : </a>
+<a name="259"><span class="lineNum">     259 </span><span class="lineNoCov">          0 :         p-&gt;err_pending = pending;</span></a>
+<a name="260"><span class="lineNum">     260 </span><span class="lineNoCov">          0 : }</span></a>
+<a name="261"><span class="lineNum">     261 </span>            : </a>
+<a name="262"><span class="lineNum">     262 </span>            : #define PHB4_PER_CHIP                        6 /* Max 6 PHBs per chip on p9 */</a>
+<a name="263"><span class="lineNum">     263 </span>            : </a>
+<a name="264"><span class="lineNum">     264 </span><span class="lineNoCov">          0 : static inline int phb4_get_opal_id(unsigned int chip_id, unsigned int index)</span></a>
+<a name="265"><span class="lineNum">     265 </span>            : {</a>
+<a name="266"><span class="lineNum">     266 </span><span class="lineNoCov">          0 :         return chip_id * PHB4_PER_CHIP + index;</span></a>
+<a name="267"><span class="lineNum">     267 </span>            : }</a>
+<a name="268"><span class="lineNum">     268 </span>            : </a>
+<a name="269"><span class="lineNum">     269 </span>            : #endif /* __PHB4_H */</a>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.14</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
